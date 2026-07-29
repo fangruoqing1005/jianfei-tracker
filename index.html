@@ -1,0 +1,2211 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>减脂管理工作台</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+/* =================================================================
+ * 减脂管理工作台 — 纯白北欧复古印刷风格
+ * White Nordic Retro-Print — Large Rounded Cards
+ * ================================================================= */
+
+/* ====== Reset & Base ====== */
+*{margin:0;padding:0;box-sizing:border-box}
+html{font-size:16px;-webkit-tap-highlight-color:transparent}
+body{
+  font-family:"Noto Serif SC","STSong","SimSun",Georgia,serif;
+  background:var(--bg);
+  color:var(--text);
+  line-height:1.7;
+  -webkit-font-smoothing:antialiased;
+  position:relative;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+input,textarea,select,button{font-family:inherit}
+input[type=number]{-moz-appearance:textfield}
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
+
+/* ====== CSS Variables ====== */
+:root{
+  /* Background — pure white system */
+  --bg:#FFFFFF;
+  --bg-alt:#F7F8FA;
+  --card:#FFFFFF;
+  /* Colored card backgrounds */
+  --card-blue:#E4F0F9;
+  --card-yellow:#F0F3E4;
+  --card-pink:#F8E6E6;
+  /* Text — on white */
+  --text:#3A3A3A;
+  --text-muted:#9E9E9E;
+  --text-title:#2C2C2C;
+  /* Text — on colored cards (deepened) */
+  --text-on-blue:#4A6B8A;
+  --text-on-yellow:#6B7A4E;
+  --text-on-pink:#D89A9A;
+  /* Borders */
+  --border:#E8E8E8;
+  --border-light:#F0F0F0;
+  /* Semantic */
+  --success:#7BA88A;
+  --success-light:#EDF5EF;
+  --warning:#D4A76A;
+  --warning-light:#FCF5EB;
+  --danger:#D89A9A;
+  --danger-light:#FBE8E8;
+  /* Radii — large & generous */
+  --radius-xl:28px;
+  --radius-lg:24px;
+  --radius-md:18px;
+  --radius-sm:14px;
+  --radius-xs:10px;
+}
+
+/* ====== Layout ====== */
+.container{max-width:680px;margin:0 auto;padding:0 20px 50px}
+
+/* ====== Header ====== */
+.app-header{
+  background:var(--card);
+  padding:22px 20px 24px;
+  position:relative;
+  border-bottom:1px solid var(--border-light);
+}
+.header-inner{max-width:680px;margin:0 auto}
+.header-top{display:flex;justify-content:space-between;align-items:center}
+.header-top h1{
+  font-size:19px;
+  font-weight:700;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color:var(--text-title);
+  letter-spacing:.5px;
+}
+.settings-btn{
+  width:40px;height:40px;
+  border-radius:50%;
+  border:1px solid var(--border);
+  background:var(--bg);
+  color:var(--text-muted);
+  font-size:16px;
+  cursor:pointer;
+  transition:all .2s;
+  display:flex;align-items:center;justify-content:center;
+}
+.settings-btn:hover{background:var(--card-blue);color:var(--text-on-blue);border-color:var(--card-blue)}
+.header-date{font-size:13px;color:var(--text-muted);margin-top:5px}
+.quick-stats{display:flex;gap:8px;margin-top:16px}
+.stat-item{
+  flex:1;
+  background:var(--bg-alt);
+  border:1px solid var(--border-light);
+  border-radius:var(--radius-md);
+  padding:10px 6px;
+  text-align:center;
+}
+.stat-value{font-size:16px;font-weight:700;line-height:1.3;color:var(--text-title)}
+.stat-label{font-size:10px;color:var(--text-muted);margin-top:3px}
+.text-success{color:var(--success)!important}
+.text-danger{color:var(--danger)!important}
+
+/* ====== Tab Bar ====== */
+.tab-bar{
+  display:flex;
+  background:var(--card);
+  border-bottom:1px solid var(--border-light);
+  position:sticky;top:0;z-index:100;
+  gap:0;
+  padding:0 12px;
+}
+.tab{
+  flex:1;
+  padding:14px 6px;
+  text-align:center;
+  cursor:pointer;
+  font-size:13px;
+  font-weight:500;
+  color:var(--text-muted);
+  border-bottom:2px solid transparent;
+  transition:all .3s;
+  user-select:none;
+}
+.tab.active{
+  color:var(--text-title);
+  border-bottom-color:var(--text-title);
+  font-weight:700;
+}
+
+/* ====== Tab Content ====== */
+.tab-content{display:none;padding:16px 0}
+.tab-content.active{display:block;animation:tabIn .35s ease}
+@keyframes tabIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ====== Card System ====== */
+.card{
+  background:var(--card);
+  border:1px solid var(--border-light);
+  border-radius:var(--radius-xl);
+  padding:22px 20px;
+  margin-bottom:16px;
+  animation:cardIn .4s ease backwards;
+}
+@keyframes cardIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+.card-title{
+  display:flex;align-items:center;gap:8px;
+  font-size:14px;font-weight:600;
+  color:var(--text-title);
+  margin-bottom:16px;
+  letter-spacing:.5px;
+}
+.card-title .emoji{font-size:17px}
+
+/* — Card color rotation — */
+/* Record tab */
+#tab-record .card:nth-child(3){background:var(--card-blue)}     /* weight */
+#tab-record .card:nth-child(4){background:var(--card-pink)}     /* menstrual */
+#tab-record .card:nth-child(5){background:var(--card-yellow)}   /* body stats */
+#tab-record .card:nth-child(6){background:var(--card-blue)}     /* exercise */
+#tab-record .card:nth-child(7){background:var(--card-pink)}     /* diet */
+#tab-record .card:nth-child(8){background:var(--card-yellow)}   /* macros */
+#tab-record .card:nth-child(9){background:var(--card-pink)}    /* note */
+
+/* Card title text color on colored backgrounds */
+#tab-record .card[style*="--card-blue"],
+#tab-record .card:nth-child(3) .card-title,
+#tab-record .card:nth-child(6) .card-title,
+#tab-record .card:nth-child(9) .card-title{color:var(--text-on-blue)}
+#tab-record .card:nth-child(5) .card-title,
+#tab-record .card:nth-child(8) .card-title{color:var(--text-on-yellow)}
+#tab-record .card:nth-child(4) .card-title,
+#tab-record .card:nth-child(7) .card-title,
+#tab-record .card:nth-child(10) .card-title{color:var(--text-on-pink)}
+
+/* — Analysis & Motivation cards — */
+#tab-analysis .card:nth-child(1){background:var(--card-blue)}
+#tab-analysis .card:nth-child(2){background:var(--card-yellow)}
+#tab-analysis .card:nth-child(3){background:var(--card-pink)}
+#tab-analysis .card:nth-child(4){background:var(--card-blue)}
+#tab-analysis .card:nth-child(5){background:var(--card-yellow)}
+#tab-motivation .card:nth-child(1){background:var(--card-yellow)}
+#tab-motivation .card:nth-child(2){background:var(--card-blue)}
+#tab-motivation .card:nth-child(3){background:var(--card-pink)}
+#tab-motivation .card:nth-child(4){background:var(--card-yellow)}
+
+/* ====== Date Navigation ====== */
+.date-nav{
+  display:flex;align-items:center;gap:10px;
+  margin-bottom:16px;
+  background:var(--card);
+  border:1px solid var(--border-light);
+  border-radius:32px;
+  padding:8px 10px;
+}
+.date-nav .nav-btn{
+  width:38px;height:38px;
+  border-radius:50%;
+  border:1px solid var(--border);
+  background:var(--bg);
+  cursor:pointer;
+  font-size:18px;
+  color:var(--text-muted);
+  transition:all .2s;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+.date-nav .nav-btn:hover{background:var(--card-blue);color:var(--text-on-blue);border-color:var(--card-blue)}
+.date-display{
+  flex:1;
+  text-align:center;
+  font-size:15px;
+  font-weight:600;
+  color:var(--text-title);
+  cursor:pointer;
+  user-select:none;
+}
+.date-display .weekday{font-size:12px;color:var(--text-muted);font-weight:400}
+.today-btn{
+  padding:7px 16px;
+  border-radius:24px;
+  border:1px solid var(--text-title);
+  background:var(--card);
+  color:var(--text-title);
+  font-size:12px;
+  font-weight:600;
+  cursor:pointer;
+  transition:all .2s;
+  flex-shrink:0;
+}
+.today-btn:hover{background:var(--text-title);color:#fff}
+
+/* ====== Weight Card ====== */
+.weight-card{border-radius:var(--radius-xl)!important}
+.weight-display{text-align:center;margin:14px 0 18px}
+.weight-display .value{
+  font-size:48px;
+  font-weight:700;
+  color:var(--text-on-blue);
+  letter-spacing:0px;
+}
+.weight-display .unit{font-size:17px;color:var(--text-on-blue);margin-left:4px;opacity:.6}
+.weight-input{
+  width:130px;height:56px;
+  text-align:center;
+  font-size:22px;font-weight:700;
+  border:1px solid rgba(74,107,138,.25);
+  border-radius:var(--radius-md);
+  outline:none;
+  transition:all .25s;
+  background:rgba(255,255,255,.7);
+  color:var(--text-on-blue);
+  font-family:inherit;
+}
+.weight-input:focus{border-color:var(--text-on-blue);background:#fff}
+.weight-change-badge{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:6px 16px;
+  border-radius:22px;
+  font-size:13px;font-weight:600;
+  margin-top:12px;
+}
+.weight-change-badge.up{background:var(--danger-light);color:var(--danger)}
+.weight-change-badge.down{background:var(--success-light);color:var(--success)}
+.weight-change-badge.stable{background:var(--warning-light);color:var(--warning)}
+
+/* ====== Form Elements ====== */
+.form-row{display:flex;gap:14px}
+.form-group{flex:1;margin-bottom:14px}
+.form-group:last-child{margin-bottom:0}
+.form-label{
+  font-size:12.5px;
+  color:var(--text-muted);
+  margin-bottom:6px;
+  display:block;
+}
+.meal-input-wrap{position:relative}
+.meal-clear{
+  position:absolute;
+  top:8px;right:8px;
+  display:inline-flex;
+  align-items:center;justify-content:center;
+  width:20px;height:20px;
+  border-radius:50%;
+  border:none;
+  background:rgba(0,0,0,.06);
+  color:var(--text-muted);
+  font-size:12px;
+  cursor:pointer;
+  transition:all .2s;
+  line-height:1;
+  z-index:2;
+}
+.meal-clear:hover{background:var(--danger-light);color:var(--danger)}
+.form-input,.form-select,textarea.form-input{
+  width:100%;
+  padding:12px 14px;
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  font-size:14px;
+  outline:none;
+  transition:all .25s;
+  background:rgba(255,255,255,.8);
+  color:var(--text);
+  font-family:inherit;
+}
+.form-input:focus,.form-select:focus,textarea.form-input:focus{
+  border-color:var(--text-title);
+  background:#fff;
+}
+textarea.form-input{resize:vertical;min-height:40px}
+.form-select{
+  appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239E9E9E' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:right 14px center;
+  padding-right:38px;
+}
+
+/* Number stepper */
+.stepper{display:flex;align-items:center;gap:8px}
+.stepper button{
+  width:38px;height:38px;
+  border-radius:50%;
+  border:1px solid var(--border);
+  background:rgba(255,255,255,.8);
+  cursor:pointer;
+  font-size:18px;
+  color:var(--text);
+  transition:all .2s;
+  flex-shrink:0;
+}
+.stepper button:hover{background:var(--card-blue);color:var(--text-on-blue);border-color:var(--card-blue)}
+.stepper input{
+  text-align:center;
+  font-size:16px;font-weight:600;
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  height:42px;width:64px;
+  outline:none;
+  background:rgba(255,255,255,.8);
+  color:var(--text);
+  font-family:inherit;
+}
+.stepper input:focus{border-color:var(--text-title)}
+.stepper .unit{font-size:13px;color:var(--text-muted)}
+
+/* Exercise grid */
+.exercise-grid{
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+  margin-bottom:12px;
+}
+.exercise-item{
+  padding:9px 16px;
+  text-align:center;
+  border:1px solid var(--border);
+  border-radius:24px;
+  cursor:pointer;
+  font-size:13px;
+  transition:all .2s;
+  background:rgba(255,255,255,.7);
+  user-select:none;
+  color:var(--text);
+  white-space:nowrap;
+  font-family:inherit;
+}
+.exercise-item:hover{border-color:var(--text-title);color:var(--text-title)}
+.exercise-item.checked{
+  border-color:var(--text-title);
+  background:var(--text-title);
+  color:#fff;
+  font-weight:600;
+}
+
+/* Pill selector */
+.pill-group{display:flex;gap:8px}
+.pill-option{
+  flex:1;
+  padding:11px 6px;
+  text-align:center;
+  border:1px solid var(--border);
+  border-radius:24px;
+  cursor:pointer;
+  font-size:13px;
+  font-weight:500;
+  transition:all .2s;
+  background:rgba(255,255,255,.7);
+  user-select:none;
+  color:var(--text-muted);
+}
+.pill-option:hover{border-color:var(--text-title);color:var(--text-title)}
+.pill-option.selected{
+  border-color:var(--text-title);
+  background:var(--text-title);
+  color:#fff;
+  font-weight:600;
+}
+
+/* Water input */
+.water-row{display:flex;align-items:center;gap:8px}
+.water-row input{flex:1}
+.water-quick{display:flex;gap:7px;margin-top:10px;flex-wrap:wrap}
+.water-quick button{
+  padding:8px 16px;
+  border:1px solid var(--border);
+  border-radius:24px;
+  background:rgba(255,255,255,.7);
+  cursor:pointer;
+  font-size:12px;
+  color:var(--text-muted);
+  transition:all .2s;
+  font-family:inherit;
+}
+.water-quick button:hover{border-color:var(--text-title);color:var(--text-title)}
+
+/* Save button */
+.save-btn{
+  width:100%;
+  padding:16px;
+  border:none;
+  border-radius:32px;
+  background:var(--text-title);
+  color:#fff;
+  font-size:16px;
+  font-weight:700;
+  cursor:pointer;
+  transition:all .2s;
+  position:sticky;
+  bottom:16px;
+  z-index:50;
+  font-family:inherit;
+}
+.save-btn:hover{background:#1A1A1A}
+.save-btn:active{transform:scale(.98)}
+
+.copy-btn{
+  width:100%;
+  padding:12px;
+  border:1px dashed var(--border);
+  border-radius:var(--radius-lg);
+  background:var(--bg);
+  color:var(--text-muted);
+  font-size:13px;
+  cursor:pointer;
+  transition:all .2s;
+  margin-bottom:16px;
+  font-family:inherit;
+}
+.copy-btn:hover{border-color:var(--text-muted);color:var(--text-title)}
+
+/* ====== Back to Top ====== */
+.back-to-top{
+  display:none;
+  position:fixed;
+  bottom:80px;
+  right:20px;
+  width:44px;height:44px;
+  border-radius:50%;
+  border:1px solid var(--border);
+  background:var(--card);
+  color:var(--text-muted);
+  font-size:20px;
+  cursor:pointer;
+  z-index:90;
+  transition:all .25s;
+  font-family:inherit;
+}
+.back-to-top.visible{display:flex;align-items:center;justify-content:center}
+.back-to-top:hover{border-color:var(--text-title);color:var(--text-title)}
+
+/* ====== Analysis ====== */
+.analysis-change{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:6px 18px;
+  border-radius:24px;
+  font-weight:700;font-size:15px;
+  margin-bottom:12px;
+}
+.analysis-change.up{background:var(--danger-light);color:var(--danger)}
+.analysis-change.down{background:var(--success-light);color:var(--success)}
+.analysis-change.stable{background:var(--warning-light);color:var(--warning)}
+.analysis-msg{
+  font-size:15px;font-weight:600;
+  margin-bottom:16px;line-height:1.6;
+  color:var(--text-title);
+}
+.analysis-section{margin-bottom:14px}
+.analysis-section h4{font-size:13px;color:var(--text-muted);margin-bottom:8px;font-weight:600}
+.analysis-section ul{list-style:none;padding:0}
+.analysis-section li{
+  padding:5px 0;font-size:14px;
+  display:flex;align-items:flex-start;gap:6px;
+}
+.cause-tag{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:6px 14px;
+  border-radius:20px;
+  font-size:13px;margin:3px;
+  background:rgba(255,255,255,.7);
+  color:var(--text);
+}
+.suggestion-item{
+  padding:10px 16px;
+  background:rgba(255,255,255,.7);
+  border-radius:var(--radius-sm);
+  margin-bottom:6px;
+  font-size:14px;
+  color:var(--text);
+}
+
+.comparison-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.comp-item{
+  text-align:center;
+  padding:18px 8px;
+  border-radius:var(--radius-lg);
+  background:rgba(255,255,255,.6);
+}
+.comp-item .label{display:block;font-size:11px;color:var(--text-muted);margin-bottom:6px}
+.comp-item .val{font-size:18px;font-weight:700;color:var(--text-title)}
+.comp-item .val.up{color:var(--danger)}
+.comp-item .val.down{color:var(--success)}
+
+.chart-container{position:relative;height:280px;width:100%;margin-top:12px}
+.empty-chart{
+  height:200px;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--text-muted);font-size:14px;
+  background:rgba(255,255,255,.6);
+  border-radius:var(--radius-lg);
+}
+
+.weekly-stats{display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.weekly-stat{
+  flex:1;min-width:120px;
+  padding:16px;
+  border-radius:var(--radius-lg);
+  background:rgba(255,255,255,.7);
+  text-align:center;
+}
+.weekly-stat .label{font-size:11px;color:var(--text-muted)}
+.weekly-stat .val{font-size:18px;font-weight:700;color:var(--text-title)}
+.weekly-trend{
+  display:inline-block;
+  padding:6px 16px;
+  border-radius:24px;
+  font-size:13px;font-weight:600;
+  margin-bottom:10px;
+}
+.weekly-trend.up{background:var(--danger-light);color:var(--danger)}
+.weekly-trend.down{background:var(--success-light);color:var(--success)}
+.weekly-trend.stable{background:var(--warning-light);color:var(--warning)}
+
+.monthly-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px}
+.month-item{
+  text-align:center;
+  padding:20px 8px;
+  border-radius:var(--radius-lg);
+  background:rgba(255,255,255,.6);
+}
+.month-item .val{font-size:24px;font-weight:700;color:var(--text-title)}
+.month-item .val.down{color:var(--success)}
+.month-item .val.up{color:var(--danger)}
+.month-item .label{font-size:11px;color:var(--text-muted);margin-top:4px}
+
+.achievements{display:flex;flex-wrap:wrap;gap:10px}
+.achievement-badge{
+  display:flex;flex-direction:column;align-items:center;
+  padding:12px 10px;
+  border-radius:var(--radius-lg);
+  background:rgba(255,255,255,.7);
+  min-width:72px;
+}
+.achievement-badge .icon{font-size:24px}
+.achievement-badge .name{font-size:11px;font-weight:600;margin-top:5px;color:var(--text-title)}
+
+/* ====== Motivation ====== */
+.motivation-img-wrap{
+  width:100%;
+  aspect-ratio:3/4;
+  border-radius:var(--radius-xl);
+  overflow:hidden;
+  background:rgba(255,255,255,.6);
+  position:relative;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;
+}
+.motivation-img-wrap img{width:100%;height:100%;object-fit:cover}
+.motivation-placeholder{text-align:center;color:var(--text-muted);padding:24px}
+.motivation-placeholder .big-emoji{font-size:56px;margin-bottom:12px}
+.motivation-placeholder p{font-size:14px;margin:3px 0}
+.motivation-nav{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
+.motivation-nav button{
+  padding:8px 20px;
+  border:1px solid var(--border);
+  border-radius:24px;
+  background:rgba(255,255,255,.7);
+  cursor:pointer;
+  font-size:13px;
+  color:var(--text-muted);
+  transition:all .2s;
+  font-family:inherit;
+}
+.motivation-nav button:hover{border-color:var(--text-title);color:var(--text-title)}
+.motivation-nav .counter{font-size:13px;color:var(--text-muted)}
+
+.quote-box{
+  text-align:center;
+  padding:24px 20px;
+  background:rgba(255,255,255,.7);
+  border-radius:var(--radius-lg);
+  position:relative;
+  margin-top:16px;
+}
+.quote-box::before{
+  content:'\201C';
+  font-size:52px;
+  color:var(--text-title);
+  opacity:.1;
+  position:absolute;
+  top:-6px;left:16px;
+  line-height:1;
+}
+.quote-text{
+  font-size:15px;
+  font-weight:600;
+  color:var(--text-title);
+  line-height:1.8;
+  position:relative;z-index:1;
+}
+
+.progress-ring-wrap{display:flex;align-items:center;gap:28px}
+.progress-ring{position:relative;width:130px;height:130px;flex-shrink:0}
+.progress-ring svg{transform:rotate(-90deg)}
+.progress-ring .ring-text{
+  position:absolute;
+  top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  text-align:center;
+}
+.progress-ring .ring-percent{font-size:24px;font-weight:700;color:var(--text-title)}
+.progress-ring .ring-label{font-size:11px;color:var(--text-muted)}
+.progress-info{flex:1}
+.progress-info .pi-row{
+  display:flex;justify-content:space-between;
+  padding:7px 0;
+  border-bottom:1px solid rgba(0,0,0,.04);
+  font-size:13px;
+}
+.progress-info .pi-row:last-child{border-bottom:none}
+.progress-info .pi-label{color:var(--text-muted)}
+.progress-info .pi-val{font-weight:700;color:var(--text-title)}
+
+.upload-area{
+  border:1px dashed var(--border);
+  border-radius:var(--radius-lg);
+  padding:28px;
+  text-align:center;
+  cursor:pointer;
+  transition:all .2s;
+  background:rgba(255,255,255,.6);
+}
+.upload-area:hover{border-color:var(--text-muted);background:rgba(255,255,255,.85)}
+.upload-area .upload-icon{font-size:40px;margin-bottom:10px}
+.upload-area p{font-size:13px;color:var(--text-muted);margin:2px 0}
+.photo-gallery{display:flex;gap:10px;margin-top:14px;overflow-x:auto;padding-bottom:4px}
+.photo-thumb{
+  width:60px;height:60px;
+  border-radius:var(--radius-sm);
+  overflow:hidden;
+  flex-shrink:0;
+  position:relative;
+  cursor:pointer;
+  border:2px solid transparent;
+}
+.photo-thumb img{width:100%;height:100%;object-fit:cover}
+.photo-thumb.active{border-color:var(--text-title)}
+.photo-thumb .del-btn{
+  position:absolute;top:3px;right:3px;
+  width:20px;height:20px;
+  border-radius:50%;
+  background:rgba(60,60,60,.6);
+  color:#fff;
+  border:none;
+  font-size:10px;
+  cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;
+  transition:opacity .2s;
+}
+.photo-thumb:hover .del-btn{opacity:1}
+
+/* ====== Modal ====== */
+.modal{
+  display:none;
+  position:fixed;top:0;left:0;
+  width:100%;height:100%;
+  background:rgba(0,0,0,.2);
+  z-index:1000;
+  justify-content:center;align-items:center;
+  backdrop-filter:blur(4px);
+}
+.modal.active{display:flex;animation:modalIn .25s ease}
+@keyframes modalIn{from{opacity:0}to{opacity:1}}
+.modal-content{
+  background:var(--card);
+  border:1px solid var(--border-light);
+  border-radius:var(--radius-xl);
+  padding:26px;
+  width:92%;
+  max-width:440px;
+  max-height:85vh;
+  overflow-y:auto;
+  animation:modalSlide .3s ease;
+}
+@keyframes modalSlide{from{transform:translateY(24px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px}
+.modal-header h2{font-size:18px;font-weight:700;color:var(--text-title)}
+.modal-close{
+  width:36px;height:36px;
+  border-radius:50%;
+  border:1px solid var(--border);
+  background:var(--bg);
+  font-size:16px;
+  cursor:pointer;
+  color:var(--text-muted);
+  transition:all .2s;
+}
+.modal-close:hover{background:var(--bg-alt)}
+.modal-body .form-group{margin-bottom:18px}
+.modal-divider{height:1px;background:var(--border-light);margin:22px 0}
+.modal-body h3{font-size:15px;font-weight:600;margin-bottom:14px;color:var(--text-title)}
+
+.btn-primary{
+  width:100%;padding:14px;
+  border:none;
+  border-radius:var(--radius-md);
+  background:var(--text-title);
+  color:#fff;
+  font-size:15px;font-weight:600;
+  cursor:pointer;
+  transition:all .2s;
+  margin-bottom:10px;
+  font-family:inherit;
+}
+.btn-primary:hover{background:#1A1A1A}
+
+.btn-secondary{
+  display:block;
+  width:100%;padding:12px;
+  border:1px solid var(--border);
+  border-radius:var(--radius-md);
+  background:var(--bg);
+  color:var(--text);
+  font-size:14px;
+  cursor:pointer;
+  transition:all .2s;
+  margin-bottom:10px;
+  text-align:center;
+  font-family:inherit;
+}
+.btn-secondary:hover{border-color:var(--text-muted);color:var(--text-title)}
+
+.btn-danger{
+  width:100%;padding:12px;
+  border:1px solid var(--danger);
+  border-radius:var(--radius-md);
+  background:var(--card);
+  color:var(--danger);
+  font-size:14px;
+  cursor:pointer;
+  transition:all .2s;
+  font-family:inherit;
+}
+.btn-danger:hover{background:var(--danger);color:#fff}
+
+/* ====== Date Picker ====== */
+.date-picker-modal .modal-content{max-width:340px;padding:22px}
+.dp-header{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:18px;
+}
+.dp-header h3{font-size:16px;font-weight:700;color:var(--text-title)}
+.dp-nav-btn{
+  width:36px;height:36px;
+  border-radius:50%;
+  border:1px solid var(--border);
+  background:var(--bg);
+  cursor:pointer;
+  font-size:16px;
+  color:var(--text);
+  transition:all .2s;
+  display:flex;align-items:center;justify-content:center;
+}
+.dp-nav-btn:hover{background:var(--card-blue);color:var(--text-on-blue);border-color:var(--card-blue)}
+.dp-weekdays{
+  display:grid;grid-template-columns:repeat(7,1fr);
+  gap:4px;margin-bottom:10px;text-align:center;
+}
+.dp-weekdays div{font-size:11px;color:var(--text-muted);font-weight:600;padding:8px 0}
+.dp-days{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.dp-day{
+  aspect-ratio:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;
+  font-size:14px;font-weight:500;
+  cursor:pointer;
+  transition:all .2s;
+  border:1px solid transparent;
+  color:var(--text);
+  background:var(--card);
+}
+.dp-day:hover{border-color:var(--text-muted)}
+.dp-day.today{border:1px solid var(--text-title);color:var(--text-title);font-weight:700}
+.dp-day.selected{background:var(--text-title);color:#fff;border-color:var(--text-title);font-weight:700}
+.dp-day.other{color:var(--text-muted);background:transparent}
+.dp-day.other:hover{border-color:var(--border)}
+.dp-go-today{
+  width:100%;padding:12px;margin-top:16px;
+  border:1px solid var(--text-title);
+  border-radius:var(--radius-md);
+  background:var(--card);
+  color:var(--text-title);
+  font-size:14px;font-weight:600;
+  cursor:pointer;
+  transition:all .2s;
+  font-family:inherit;
+}
+.dp-go-today:hover{background:var(--text-title);color:#fff}
+
+/* ====== Toast ====== */
+.toast-container{
+  position:fixed;bottom:80px;left:50%;
+  transform:translateX(-50%);
+  z-index:2000;
+  display:flex;flex-direction:column;gap:8px;
+  pointer-events:none;
+}
+.toast{
+  padding:12px 26px;
+  border-radius:26px;
+  color:#fff;
+  font-size:14px;font-weight:600;
+  animation:toastIn .3s ease,toastOut .3s ease 2.5s forwards;
+  pointer-events:auto;
+}
+.toast.success{background:var(--success)}
+.toast.error{background:var(--danger)}
+.toast.info{background:var(--text-title)}
+@keyframes toastIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes toastOut{to{opacity:0;transform:translateY(20px)}}
+
+/* ====== Responsive ====== */
+@media(max-width:380px){
+.exercise-grid .exercise-item{padding:7px 12px;font-size:12px}
+.quick-stats{flex-wrap:wrap}
+.stat-item{min-width:45%}
+.weight-display .value{font-size:40px}
+.progress-ring-wrap{flex-direction:column;align-items:center;gap:20px}
+}
+</style>
+</head>
+<body>
+
+<div class="content-wrapper">
+
+<!-- ====== Header ====== -->
+<header class="app-header">
+  <div class="header-inner">
+    <div class="header-top">
+      <h1>减脂管理工作台</h1>
+      <button class="settings-btn" onclick="openSettings()">⚙</button>
+    </div>
+    <div class="header-date" id="header-date"></div>
+    <div class="quick-stats" id="quick-stats"></div>
+  </div>
+</header>
+
+<!-- ====== Tab Bar ====== -->
+<nav class="tab-bar">
+  <div class="tab active" data-tab="record" onclick="switchTab('record')">每日记录</div>
+  <div class="tab" data-tab="analysis" onclick="switchTab('analysis')">分析建议</div>
+  <div class="tab" data-tab="motivation" onclick="switchTab('motivation')">每日动力</div>
+</nav>
+
+<!-- ====== Record Tab ====== -->
+<section class="tab-content active" id="tab-record">
+  <div class="container">
+
+    <!-- Date Navigation -->
+    <div class="date-nav">
+      <button class="nav-btn" onclick="navigateDate(-1)">‹</button>
+      <div class="date-display" id="date-display" onclick="openDatePicker()"></div>
+      <button class="today-btn" onclick="goToToday()">今天</button>
+      <button class="nav-btn" onclick="navigateDate(1)">›</button>
+    </div>
+
+    <button class="copy-btn" onclick="copyYesterdayRecord()">复制昨日记录</button>
+
+    <!-- Weight (blue) -->
+    <div class="card weight-card">
+      <div class="card-title"><span class="emoji">⚖</span>体重记录</div>
+      <div class="weight-display">
+        <span class="value" id="weight-show">--</span><span class="unit">kg</span>
+      </div>
+      <div style="text-align:center">
+        <input type="number" class="weight-input" id="weight-input" step="0.05" min="0" placeholder="0.00" oninput="updateWeightShow()">
+      </div>
+      <div style="text-align:center">
+        <span class="weight-change-badge" id="weight-change-badge" style="display:none"></span>
+      </div>
+    </div>
+
+    <!-- Menstrual (pink) -->
+    <div class="card">
+      <div class="card-title"><span class="emoji">🌙</span>经期状态</div>
+      <div class="form-group" style="margin-bottom:0">
+        <select class="form-select" id="menstrual-phase">
+          <option value="none">无特殊</option>
+          <option value="pms">经前期（PMS）</option>
+          <option value="period">经期</option>
+          <option value="ovulation">排卵期</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Body Stats (yellow) -->
+    <div class="card">
+      <div class="card-title"><span class="emoji">📊</span>身体状态</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">🚽 排便次数</label>
+          <div class="stepper">
+            <button onclick="adjustNum('bowel-input',-1)">−</button>
+            <input type="number" id="bowel-input" min="0" max="10" value="0">
+            <span class="unit">次</span>
+            <button onclick="adjustNum('bowel-input',1)">+</button>
+          </div>
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">😴 睡眠质量</label>
+        <div class="pill-group" data-name="sleep">
+          <div class="pill-option" data-value="good">😴 充足质高</div>
+          <div class="pill-option selected" data-value="normal">😐 正常</div>
+          <div class="pill-option" data-value="poor">😩 不足质差</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Exercise (blue) -->
+    <div class="card">
+      <div class="card-title"><span class="emoji">🏃</span>运动内容</div>
+      <div class="exercise-grid" id="exercise-grid"></div>
+      <input type="text" class="form-input" id="exercise-custom" placeholder="其他运动（用逗号分隔）">
+    </div>
+
+    <!-- Diet (pink) -->
+    <div class="card">
+      <div class="card-title"><span class="emoji">🍽</span>饮食记录</div>
+      <div class="form-group">
+        <label class="form-label">🌅 早餐</label>
+        <div class="meal-input-wrap">
+          <textarea class="form-input" id="breakfast-input" rows="2" placeholder="如：燕麦粥+鸡蛋+牛奶" style="padding-right:32px"></textarea>
+          <span class="meal-clear" onclick="var t=document.getElementById('breakfast-input');t.value='';t.focus()" title="清空">×</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">☀ 午餐</label>
+        <div class="meal-input-wrap">
+          <textarea class="form-input" id="lunch-input" rows="2" placeholder="如：鸡胸肉沙拉+糙米饭" style="padding-right:32px"></textarea>
+          <span class="meal-clear" onclick="var t=document.getElementById('lunch-input');t.value='';t.focus()" title="清空">×</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">🌙 晚餐</label>
+        <div class="meal-input-wrap">
+          <textarea class="form-input" id="dinner-input" rows="2" placeholder="如：蔬菜汤+全麦面包" style="padding-right:32px"></textarea>
+          <span class="meal-clear" onclick="var t=document.getElementById('dinner-input');t.value='';t.focus()" title="清空">×</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">💧 饮水量</label>
+        <div class="water-row">
+          <input type="number" class="form-input" id="water-input" min="0" step="50" value="0" style="text-align:center;font-weight:600">
+          <span style="font-size:13px;color:var(--text-muted)">ml</span>
+        </div>
+        <div class="water-quick">
+          <button onclick="adjustWater(200)">+200ml</button>
+          <button onclick="adjustWater(500)">+500ml</button>
+          <button onclick="adjustWater(1000)">+1L</button>
+          <button onclick="document.getElementById('water-input').value=0">清零</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Macros (yellow) -->
+    <div class="card">
+      <div class="card-title"><span class="emoji">🥗</span>营养摄入</div>
+      <div class="form-group">
+        <label class="form-label">🥩 蛋白质摄入</label>
+        <div class="pill-group" data-name="protein">
+          <div class="pill-option" data-value="low">低</div>
+          <div class="pill-option selected" data-value="medium">中</div>
+          <div class="pill-option" data-value="high">高</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">🥬 蔬菜摄入</label>
+        <div class="pill-group" data-name="veggie">
+          <div class="pill-option" data-value="low">低</div>
+          <div class="pill-option selected" data-value="medium">中</div>
+          <div class="pill-option" data-value="high">高</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">🍚 碳水摄入</label>
+        <div class="pill-group" data-name="carbs">
+          <div class="pill-option" data-value="low">低</div>
+          <div class="pill-option selected" data-value="medium">中</div>
+          <div class="pill-option" data-value="high">高</div>
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">🧂 盐分摄入</label>
+        <div class="pill-group" data-name="salt">
+          <div class="pill-option" data-value="low">低</div>
+          <div class="pill-option selected" data-value="medium">中</div>
+          <div class="pill-option" data-value="high">高</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Note (pink) -->
+    <div class="card">
+      <div class="card-title"><span class="emoji">📝</span>今日备注</div>
+      <textarea class="form-input" id="note-input" rows="2" placeholder="今日感受、特殊情况等..."></textarea>
+    </div>
+
+    <button class="save-btn" onclick="saveCurrentRecord()">保存记录</button>
+
+    <!-- Back to Top -->
+    <button class="back-to-top" id="back-to-top" onclick="scrollToTop()" title="返回顶部">↑</button>
+
+  </div>
+</section>
+
+<!-- ====== Analysis Tab ====== -->
+<section class="tab-content" id="tab-analysis">
+  <div class="container">
+
+    <div class="card">
+      <div class="card-title"><span class="emoji">⚖</span>体重对比</div>
+      <div class="comparison-grid" id="comparison-grid">
+        <div class="comp-item"><span class="label">较昨日</span><span class="val" id="vs-yesterday">—</span></div>
+        <div class="comp-item"><span class="label">较上周</span><span class="val" id="vs-lastweek">—</span></div>
+        <div class="comp-item"><span class="label">较起始</span><span class="val" id="vs-start">—</span></div>
+        <div class="comp-item"><span class="label">距目标</span><span class="val" id="vs-target">—</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="emoji">📋</span>日频分析</div>
+      <div id="daily-analysis"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="emoji">📈</span>体重趋势（近30天）</div>
+      <div class="chart-container" id="weight-chart-container">
+        <canvas id="weight-chart"></canvas>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="emoji">📅</span>周频分析</div>
+      <div id="weekly-analysis"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="emoji">📆</span>月度总结</div>
+      <div id="monthly-summary"></div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ====== Motivation Tab ====== -->
+<section class="tab-content" id="tab-motivation">
+  <div class="container">
+
+    <div class="card">
+      <div class="card-title"><span class="emoji">✨</span>每日动力</div>
+      <div class="motivation-img-wrap" id="motivation-img" onclick="nextMotivationPhoto()">
+        <div class="motivation-placeholder">
+          <div class="big-emoji">💪</div>
+          <p>上传你喜欢的女团照片</p>
+          <p>或健身偶像照片</p>
+          <p>作为每日减肥动力</p>
+        </div>
+      </div>
+      <div class="motivation-nav">
+        <button onclick="prevMotivationPhoto()">‹ 上一张</button>
+        <span class="counter" id="photo-counter"></span>
+        <button onclick="nextMotivationPhoto()">下一张 ›</button>
+      </div>
+      <div class="quote-box">
+        <div class="quote-text" id="daily-quote"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="emoji">🎯</span>减脂进度</div>
+      <div class="progress-ring-wrap">
+        <div class="progress-ring">
+          <svg width="130" height="130">
+            <circle cx="65" cy="65" r="56" fill="none" stroke="#E8E8E8" stroke-width="10"/>
+            <circle id="progress-ring-circle" cx="65" cy="65" r="56" fill="none" stroke="url(#progGrad)" stroke-width="10" stroke-dasharray="351.86" stroke-dashoffset="351.86" stroke-linecap="round" style="transition:stroke-dashoffset .8s ease"/>
+            <defs>
+              <linearGradient id="progGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#3A3A3A"/>
+                <stop offset="100%" stop-color="#6B7A4E"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <div class="ring-text">
+            <div class="ring-percent" id="ring-percent">0%</div>
+            <div class="ring-label">已完成</div>
+          </div>
+        </div>
+        <div class="progress-info">
+          <div class="pi-row"><span class="pi-label">起始体重</span><span class="pi-val" id="pi-start">—</span></div>
+          <div class="pi-row"><span class="pi-label">当前体重</span><span class="pi-val" id="pi-current">—</span></div>
+          <div class="pi-row"><span class="pi-label">目标体重</span><span class="pi-val" id="pi-target">—</span></div>
+          <div class="pi-row"><span class="pi-label">累计减重</span><span class="pi-val" id="pi-lost">—</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="emoji">🏆</span>成就徽章</div>
+      <div class="achievements" id="achievements"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="emoji">📤</span>上传动力照片</div>
+      <input type="file" id="photo-upload-input" accept="image/*" multiple style="display:none" onchange="handlePhotoUpload(this.files)">
+      <div class="upload-area" onclick="document.getElementById('photo-upload-input').click()">
+        <div class="upload-icon">📸</div>
+        <p>点击上传照片（支持多选）</p>
+        <p>支持女团照片、健身偶像等激励你的图片</p>
+      </div>
+      <div class="photo-gallery" id="photo-gallery"></div>
+    </div>
+
+  </div>
+</section>
+
+</div>
+
+<!-- ====== Settings Modal ====== -->
+<div class="modal" id="settings-modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>设置</h2>
+      <button class="modal-close" onclick="closeSettings()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">起始体重 (kg)</label>
+        <input type="number" class="form-input" id="setting-start-weight" step="0.05" placeholder="如 70.00">
+      </div>
+      <div class="form-group">
+        <label class="form-label">目标体重 (kg)</label>
+        <input type="number" class="form-input" id="setting-target-weight" step="0.05" placeholder="如 55.00">
+      </div>
+      <div class="form-group">
+        <label class="form-label">身高 (cm) — 可选</label>
+        <input type="number" class="form-input" id="setting-height" placeholder="如 165">
+      </div>
+      <button class="btn-primary" onclick="saveSettings()">保存设置</button>
+      <div class="modal-divider"></div>
+      <h3>数据管理</h3>
+      <button class="btn-secondary" onclick="exportData()">导出数据</button>
+      <label class="btn-secondary" style="cursor:pointer">
+        导入数据
+        <input type="file" accept=".json" style="display:none" onchange="importData(this.files[0])">
+      </label>
+      <button class="btn-danger" onclick="clearAllData()">清除所有数据</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== Date Picker Modal ====== -->
+<div class="modal date-picker-modal" id="date-picker-modal">
+  <div class="modal-content">
+    <div class="dp-header">
+      <button class="dp-nav-btn" onclick="changePickerMonth(-1)">‹</button>
+      <h3 id="dp-title"></h3>
+      <button class="dp-nav-btn" onclick="changePickerMonth(1)">›</button>
+    </div>
+    <div class="dp-weekdays">
+      <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
+    </div>
+    <div class="dp-days" id="dp-days"></div>
+    <button class="dp-go-today" onclick="pickerGoToday();closeDatePicker();">回到今天</button>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+/* ============================================================
+ * 减脂管理工作台 - JavaScript
+ * ============================================================ */
+
+(function(){
+'use strict';
+
+/* ====== Constants ====== */
+var STORE_KEY = 'fatLossWorkbench_v1';
+var EXERCISES = ['慢走','快走','爬坡','跑步','哑铃训练','瑜伽','游泳','骑行','跳绳','HIIT','普拉提','力量训练'];
+var QUOTES = [
+  '每一个坚持的今天，都是未来你感谢的自己。',
+  '不是因为看到希望才坚持，而是坚持了才看到希望。',
+  '你的身体是你唯一永远居住的地方，好好照顾它。',
+  '今天的汗水，是明天的勋章。',
+  '变美这件事，从来不会辜负认真的人。',
+  '自律给我自由。',
+  '你现在的气质里，藏着你走过的路和流过的汗。',
+  '没有人能替你流汗，但每个人都能看到你的改变。',
+  '瘦下来，是对自己最好的奖励。',
+  '坚持21天，就能养成一个好习惯。',
+  '你不需要很厉害才能开始，但你需要开始才能很厉害。',
+  '今天的你，比昨天的你更接近理想。',
+  '与其羡慕别人的身材，不如开始自己的蜕变。',
+  '每一次拒绝诱惑，都是在向更好的自己靠近。',
+  '管住嘴，迈开腿，明天你会感谢今天的自己。',
+  '你只管努力，剩下的交给时间。',
+  '美丽是一种习惯，不是一种结果。',
+  '当你想要放弃时，想想当初为什么开始。',
+  '改变，从今天的每一个选择开始。',
+  '你的努力，终将变成别人眼中的天赋。',
+  '最好的投资，就是投资自己的身体。',
+  '减肥不是惩罚，而是爱护自己的方式。',
+  '每一步都算数，每一天都有意义。',
+  '你值得更好的自己。',
+  '坚持，是最简单的成功秘诀。',
+  '今天少吃一口，明天多美一分。',
+  '你的坚持，终将美好。',
+  '身材管理，是终身的事业。',
+  '自律的人，最终都会发光。',
+  '相信过程，享受蜕变。'
+];
+
+/* ====== State ====== */
+var appData = { settings:{}, records:{}, customPhotos:[] };
+var currentDate = getTodayStr();
+var weightChart = null;
+var weeklyChart = null;
+var currentPhotoIdx = 0;
+
+/* ====== Date Utils ====== */
+function parseDate(dateStr){
+  var p = dateStr.split('-');
+  return new Date(parseInt(p[0]),parseInt(p[1])-1,parseInt(p[2]));
+}
+function getTodayStr(){
+  var d = new Date();
+  return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+}
+function pad(n){return n<10?'0'+n:''+n}
+function formatDate(dateStr){
+  var d = parseDate(dateStr);
+  var wd = ['日','一','二','三','四','五','六'];
+  return d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日 星期'+wd[d.getDay()];
+}
+function formatDateShort(dateStr){
+  var d = parseDate(dateStr);
+  return (d.getMonth()+1)+'/'+d.getDate();
+}
+function dateToStr(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
+function addDays(dateStr,n){
+  var d = parseDate(dateStr);
+  d.setDate(d.getDate()+n);
+  return dateToStr(d);
+}
+function getWeekStart(dateStr){
+  var d = parseDate(dateStr);
+  var day = d.getDay();
+  var diff = day===0?6:day-1;
+  d.setDate(d.getDate()-diff);
+  return dateToStr(d);
+}
+function dayOfYear(dateStr){
+  var d = parseDate(dateStr);
+  var start = new Date(d.getFullYear(),0,0);
+  return Math.floor((d-start)/86400000);
+}
+
+/* ====== Data Management ====== */
+function loadData(){
+  try{
+    var raw = localStorage.getItem(STORE_KEY);
+    if(raw){
+      appData = JSON.parse(raw);
+      if(!appData.settings) appData.settings = {};
+      if(!appData.records) appData.records = {};
+      if(!appData.customPhotos) appData.customPhotos = [];
+    }
+  }catch(e){console.error('Load data error:',e)}
+}
+function saveData(){
+  try{
+    localStorage.setItem(STORE_KEY, JSON.stringify(appData));
+  }catch(e){
+    showToast('存储空间不足，请删除部分照片','error');
+  }
+}
+function getRecord(dateStr){return appData.records[dateStr]||null}
+function getAllDates(){return Object.keys(appData.records).sort()}
+function getPrevDate(dateStr){
+  var dates = getAllDates();
+  var idx = dates.indexOf(dateStr);
+  return idx>0?dates[idx-1]:null;
+}
+function getCurrentWeight(){
+  var dates = getAllDates();
+  if(!dates.length) return null;
+  var rec = appData.records[dates[dates.length-1]];
+  return rec&&rec.weight?rec.weight:null;
+}
+
+/* ====== Rounding ====== */
+function round005(v){
+  v = Math.round(v/0.05)*0.05;
+  return Math.round(v*100)/100;
+}
+
+/* ====== UI: Tabs ====== */
+window.switchTab = function(tabName){
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active')});
+  document.querySelectorAll('.tab-content').forEach(function(c){c.classList.remove('active')});
+  document.querySelector('.tab[data-tab="'+tabName+'"]').classList.add('active');
+  document.getElementById('tab-'+tabName).classList.add('active');
+  if(tabName==='analysis'){
+    renderAnalysis();
+    setTimeout(function(){renderWeightChart();renderWeeklyChart()},100);
+  }
+  if(tabName==='motivation'){
+    renderMotivation();
+  }
+};
+
+/* ====== UI: Date Navigation ====== */
+window.navigateDate = function(delta){
+  currentDate = addDays(currentDate, delta);
+  loadFormFromRecord(currentDate);
+  updateDateDisplay();
+};
+window.goToToday = function(){
+  currentDate = getTodayStr();
+  loadFormFromRecord(currentDate);
+  updateDateDisplay();
+};
+function updateDateDisplay(){
+  var el = document.getElementById('date-display');
+  var d = parseDate(currentDate);
+  var wd = ['日','一','二','三','四','五','六'];
+  var today = getTodayStr();
+  var label = currentDate===today ? '今天' : (currentDate===addDays(today,-1)?'昨天':'');
+  el.innerHTML = d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日 <span class="weekday">星期'+wd[d.getDay()]+(label?' · '+label:'')+'</span>';
+}
+
+/* ====== UI: Date Picker ====== */
+var pickerYear = 0, pickerMonth = 0;
+window.openDatePicker = function(){
+  var d = parseDate(currentDate);
+  pickerYear = d.getFullYear();
+  pickerMonth = d.getMonth();
+  document.getElementById('date-picker-modal').classList.add('active');
+  renderPicker();
+};
+window.closeDatePicker = function(){
+  document.getElementById('date-picker-modal').classList.remove('active');
+};
+function renderPicker(){
+  document.getElementById('dp-title').textContent = pickerYear+'年 '+(pickerMonth+1)+'月';
+  var firstDay = new Date(pickerYear,pickerMonth,1).getDay();
+  var daysInMonth = new Date(pickerYear,pickerMonth+1,0).getDate();
+  var prevDaysInMonth = new Date(pickerYear,pickerMonth,0).getDate();
+  var html = '';
+  for(var i=firstDay-1;i>=0;i--){
+    var d = prevDaysInMonth - i;
+    html += '<div class="dp-day other" onclick="pickerSelectPrevMonth('+d+')">'+d+'</div>';
+  }
+  var todayStr = getTodayStr();
+  for(var d=1;d<=daysInMonth;d++){
+    var ds = pickerYear+'-'+pad(pickerMonth+1)+'-'+pad(d);
+    var cls = 'dp-day';
+    if(ds===currentDate) cls += ' selected';
+    if(ds===todayStr) cls += ' today';
+    html += '<div class="'+cls+'" onclick="pickerSelectDate(\''+ds+'\')">'+d+'</div>';
+  }
+  var totalCells = firstDay + daysInMonth;
+  var nextNeeded = (7 - (totalCells % 7)) % 7;
+  for(var d=1;d<=nextNeeded;d++){
+    html += '<div class="dp-day other" onclick="pickerSelectNextMonth('+d+')">'+d+'</div>';
+  }
+  document.getElementById('dp-days').innerHTML = html;
+}
+window.changePickerMonth = function(delta){
+  pickerMonth += delta;
+  if(pickerMonth<0){pickerMonth=11;pickerYear--}
+  if(pickerMonth>11){pickerMonth=0;pickerYear++}
+  renderPicker();
+};
+window.pickerSelectDate = function(dateStr){
+  currentDate = dateStr;
+  loadFormFromRecord(currentDate);
+  closeDatePicker();
+};
+window.pickerSelectPrevMonth = function(day){
+  pickerMonth--;
+  if(pickerMonth<0){pickerMonth=11;pickerYear--}
+  pickerSelectDate(pickerYear+'-'+pad(pickerMonth+1)+'-'+pad(day));
+};
+window.pickerSelectNextMonth = function(day){
+  pickerMonth++;
+  if(pickerMonth>11){pickerMonth=0;pickerYear++}
+  pickerSelectDate(pickerYear+'-'+pad(pickerMonth+1)+'-'+pad(day));
+};
+window.pickerGoToday = function(){
+  currentDate = getTodayStr();
+  loadFormFromRecord(currentDate);
+};
+
+/* ====== UI: Weight Input ====== */
+window.updateWeightShow = function(){
+  var val = parseFloat(document.getElementById('weight-input').value);
+  document.getElementById('weight-show').textContent = val?val.toFixed(2):'--';
+  updateWeightChangeBadge();
+};
+function updateWeightChangeBadge(){
+  var badge = document.getElementById('weight-change-badge');
+  var prevDate = getPrevDate(currentDate);
+  if(!prevDate){badge.style.display='none';return}
+  var prevRec = appData.records[prevDate];
+  if(!prevRec||!prevRec.weight){badge.style.display='none';return}
+  var curVal = parseFloat(document.getElementById('weight-input').value);
+  if(!curVal){badge.style.display='none';return}
+  var diff = round005(curVal - prevRec.weight);
+  if(Math.abs(diff)<0.05){badge.style.display='inline-flex';badge.className='weight-change-badge stable';badge.textContent='→ 持平'}
+  else if(diff>0){badge.style.display='inline-flex';badge.className='weight-change-badge up';badge.textContent='↑ '+diff.toFixed(2)+'kg'}
+  else{badge.style.display='inline-flex';badge.className='weight-change-badge down';badge.textContent='↓ '+Math.abs(diff).toFixed(2)+'kg'}
+}
+
+/* ====== UI: Steppers ====== */
+window.adjustNum = function(id,delta){
+  var el = document.getElementById(id);
+  var val = parseInt(el.value)||0;
+  val += delta;
+  var min = parseInt(el.min)||0;
+  var max = parseInt(el.max)||999;
+  if(val<min) val = min;
+  if(val>max) val = max;
+  el.value = val;
+};
+window.adjustWater = function(delta){
+  var el = document.getElementById('water-input');
+  var val = parseInt(el.value)||0;
+  el.value = val + delta;
+};
+
+/* ====== UI: Exercise Grid ====== */
+function renderExerciseGrid(){
+  var grid = document.getElementById('exercise-grid');
+  grid.innerHTML = EXERCISES.map(function(ex){
+    return '<div class="exercise-item" data-exercise="'+ex+'">'+ex+'</div>';
+  }).join('');
+  grid.querySelectorAll('.exercise-item').forEach(function(item){
+    item.addEventListener('click',function(){
+      this.classList.toggle('checked');
+    });
+  });
+}
+
+/* ====== UI: Pill Groups ====== */
+function initPillGroups(){
+  document.querySelectorAll('.pill-group').forEach(function(group){
+    group.querySelectorAll('.pill-option').forEach(function(opt){
+      opt.addEventListener('click',function(){
+        group.querySelectorAll('.pill-option').forEach(function(o){o.classList.remove('selected')});
+        opt.classList.add('selected');
+      });
+    });
+  });
+}
+function getPillValue(name){
+  var el = document.querySelector('.pill-group[data-name="'+name+'"] .pill-option.selected');
+  return el?el.dataset.value:'medium';
+}
+function setPillValue(name,val){
+  var group = document.querySelector('.pill-group[data-name="'+name+'"]');
+  if(!group) return;
+  group.querySelectorAll('.pill-option').forEach(function(o){o.classList.remove('selected')});
+  var sel = group.querySelector('.pill-option[data-value="'+val+'"]');
+  if(sel) sel.classList.add('selected');
+  else {sel = group.querySelector('.pill-option[data-value="medium"]');if(sel) sel.classList.add('selected')}
+}
+
+/* ====== Form: Collect ====== */
+function collectFormData(){
+  var exercises = [];
+  document.querySelectorAll('.exercise-item.checked').forEach(function(el){
+    exercises.push(el.dataset.exercise);
+  });
+  var custom = document.getElementById('exercise-custom').value.trim();
+  if(custom){
+    custom.split(/[,，]/).forEach(function(c){
+      c = c.trim();
+      if(c) exercises.push(c);
+    });
+  }
+  var phase = document.getElementById('menstrual-phase').value;
+  return {
+    weight: round005(parseFloat(document.getElementById('weight-input').value))||null,
+    menstrual:{phase:phase},
+    bowel: parseInt(document.getElementById('bowel-input').value)||0,
+    exercise: exercises,
+    sleep: getPillValue('sleep'),
+    breakfast: document.getElementById('breakfast-input').value.trim(),
+    lunch: document.getElementById('lunch-input').value.trim(),
+    dinner: document.getElementById('dinner-input').value.trim(),
+    water: parseInt(document.getElementById('water-input').value)||0,
+    protein: getPillValue('protein'),
+    carbs: getPillValue('carbs'),
+    salt: getPillValue('salt'),
+    veggie: getPillValue('veggie'),
+    note: document.getElementById('note-input').value.trim(),
+    ts: Date.now()
+  };
+}
+
+/* ====== Form: Populate ====== */
+function populateForm(rec){
+  document.getElementById('weight-input').value = rec&&rec.weight?rec.weight.toFixed(2):'';
+  updateWeightShow();
+  document.getElementById('menstrual-phase').value = rec&&rec.menstrual?rec.menstrual.phase:'none';
+  document.getElementById('bowel-input').value = rec?rec.bowel||0:0;
+  document.querySelectorAll('.exercise-item').forEach(function(el){
+    el.classList.toggle('checked', rec&&rec.exercise&&rec.exercise.indexOf(el.dataset.exercise)>=0);
+  });
+  var customEx = '';
+  if(rec&&rec.exercise){
+    var others = rec.exercise.filter(function(e){return EXERCISES.indexOf(e)<0});
+    customEx = others.join(', ');
+  }
+  document.getElementById('exercise-custom').value = customEx;
+  setPillValue('sleep', rec?rec.sleep||'normal':'normal');
+  document.getElementById('breakfast-input').value = rec?rec.breakfast||'':'';
+  document.getElementById('lunch-input').value = rec?rec.lunch||'':'';
+  document.getElementById('dinner-input').value = rec?rec.dinner||'':'';
+  document.getElementById('water-input').value = rec?rec.water||0:0;
+  setPillValue('protein', rec?rec.protein||'medium':'medium');
+  setPillValue('carbs', rec?rec.carbs||'medium':'medium');
+  setPillValue('salt', rec?rec.salt||'medium':'medium');
+  setPillValue('veggie', rec?rec.veggie||'medium':'medium');
+  document.getElementById('note-input').value = rec?rec.note||'':'';
+}
+function loadFormFromRecord(dateStr){
+  populateForm(getRecord(dateStr));
+  updateDateDisplay();
+}
+
+/* ====== Save Record ====== */
+window.saveCurrentRecord = function(){
+  var data = collectFormData();
+  if(!data.weight){
+    showToast('请输入体重数据','error');
+    return;
+  }
+  appData.records[currentDate] = data;
+  saveData();
+  updateQuickStats();
+  showToast('记录已保存','success');
+};
+
+/* ====== Copy Yesterday ====== */
+window.copyYesterdayRecord = function(){
+  var prevDate = addDays(currentDate,-1);
+  var prevRec = getRecord(prevDate);
+  if(!prevRec){
+    showToast('昨日无记录可复制','error');
+    return;
+  }
+  var copy = JSON.parse(JSON.stringify(prevRec));
+  copy.ts = Date.now();
+  appData.records[currentDate] = copy;
+  populateForm(copy);
+  showToast('已复制，请修改后保存','info');
+};
+
+/* ====== Quick Stats ====== */
+function updateQuickStats(){
+  var cur = getCurrentWeight();
+  var start = appData.settings.startWeight;
+  var dates = getAllDates();
+  var totalDays = dates.length;
+  var streak = calcStreak();
+  var lost = (start&&cur)?round005(start-cur):null;
+  var html = '';
+  html += '<div class="stat-item"><div class="stat-value">'+(cur?cur.toFixed(2):'—')+'</div><div class="stat-label">当前 kg</div></div>';
+  if(lost!==null){
+    var cls = lost>0?'text-success':(lost<0?'text-danger':'');
+    var sign = lost>0?'−':(lost<0?'+':'');
+    html += '<div class="stat-item"><div class="stat-value '+cls+'">'+sign+Math.abs(lost).toFixed(2)+'</div><div class="stat-label">累计减 kg</div></div>';
+  }else{
+    html += '<div class="stat-item"><div class="stat-value">—</div><div class="stat-label">累计减 kg</div></div>';
+  }
+  html += '<div class="stat-item"><div class="stat-value">'+totalDays+'</div><div class="stat-label">记录天数</div></div>';
+  html += '<div class="stat-item"><div class="stat-value">'+streak+'</div><div class="stat-label">连续天</div></div>';
+  document.getElementById('quick-stats').innerHTML = html;
+}
+function calcStreak(){
+  var dates = getAllDates();
+  if(!dates.length) return 0;
+  var streak = 0;
+  var check = parseDate(getTodayStr());
+  for(var i=dates.length-1;i>=0;i--){
+    var recDate = parseDate(dates[i]);
+    var diff = Math.round((check-recDate)/86400000);
+    if(diff===0||diff===streak){
+      streak++;
+      check = recDate;
+    }else break;
+  }
+  return streak;
+}
+
+/* ====== Analysis: Daily ====== */
+function analyzeDaily(dateStr){
+  var rec = getRecord(dateStr);
+  if(!rec||!rec.weight) return null;
+  var prevDate = getPrevDate(dateStr);
+  var prevRec = prevDate?getRecord(prevDate):null;
+  if(!prevRec||!prevRec.weight){
+    return {type:'first',change:0,changeStr:'—',message:'首次记录！开始你的减脂之旅吧',causes:[],suggestions:['坚持每日记录体重和饮食','设定合理的减重目标（每周0.5-1kg）','保持积极心态，不要急于求成']};
+  }
+  var diff = round005(rec.weight - prevRec.weight);
+  var absDiff = Math.abs(diff);
+  if(absDiff<0.1){
+    return {type:'stable',change:diff,changeStr:'持平',message:'体重稳定，身体正在调整中',causes:[],suggestions:['保持当前饮食和运动习惯','注意充足饮水（每日2000ml+）','保证7-8小时优质睡眠']};
+  }
+  if(diff>0){
+    var causes = [];
+    var suggestions = [];
+    if(prevRec.salt==='high'){causes.push('🧂 昨日盐分摄入偏高，可能导致水分滞留');suggestions.push('今日饮食清淡，减少盐分摄入')}
+    if(prevRec.carbs==='high'){causes.push('🍚 昨日碳水摄入偏高，糖原储备增加连带储水');suggestions.push('适当减少精制碳水，增加蛋白质摄入')}
+    if(prevRec.water<1500){causes.push('💧 昨日饮水量不足（'+prevRec.water+'ml）');suggestions.push('今日目标饮水2000ml以上，帮助代谢')}
+    if(prevRec.sleep==='poor'){causes.push('😴 昨日睡眠不足，影响皮质醇和代谢');suggestions.push('今晚尽量11点前入睡，保证7-8小时')}
+    if(prevRec.menstrual&&(prevRec.menstrual.phase==='pms'||prevRec.menstrual.phase==='luteal'||prevRec.menstrual.phase==='period')){
+      var phaseName = {pms:'经前期',period:'经期',luteal:'黄体期'}[prevRec.menstrual.phase];
+      causes.push('🌙 处于'+phaseName+'，荷尔蒙变化导致水分滞留');
+      suggestions.push('经期前后体重波动是正常的，不必焦虑');
+    }
+    if(prevRec.bowel===0){causes.push('💩 昨日未排便，可能影响体重读数');suggestions.push('增加膳食纤维和水分摄入，促进排便')}
+    if(prevRec.exercise.length===0){causes.push('🏃 昨日未运动');suggestions.push('今日安排30分钟以上运动')}
+    if(causes.length===0){causes.push('可能为正常生理波动（±0.5kg内属正常范围）');suggestions.push('保持良好心态，继续坚持记录')}
+    return {type:'gain',change:diff,changeStr:'↑ '+diff.toFixed(2)+'kg',message:'体重上升 '+diff.toFixed(2)+'kg',causes:causes,suggestions:suggestions};
+  }else{
+    var fastLoss = absDiff>0.5;
+    return {
+      type:'loss',change:diff,changeStr:'↓ '+absDiff.toFixed(2)+'kg',
+      message:'体重下降 '+absDiff.toFixed(2)+'kg',
+      causes:[],
+      suggestions:fastLoss?['减重速度较快，注意保证营养均衡','避免过度节食，健康减脂才是长久之计','记录今日的成就感，保持动力']:['继续保持良好的饮食和运动习惯','记录今日的成就感','保持充足饮水，促进代谢']
+    };
+  }
+}
+function renderDailyAnalysis(dateStr){
+  var a = analyzeDaily(dateStr);
+  var el = document.getElementById('daily-analysis');
+  if(!a){el.innerHTML='<div style="color:var(--text-muted);text-align:center;padding:24px">暂无分析数据，请先记录体重</div>';return}
+  var changeClass = a.type==='gain'?'up':(a.type==='loss'?'down':'stable');
+  var html = '';
+  html += '<div class="analysis-change '+changeClass+'">'+a.changeStr+'</div>';
+  html += '<div class="analysis-msg">'+a.message+'</div>';
+  if(a.causes.length){
+    html += '<div class="analysis-section"><h4>可能原因</h4>';
+    a.causes.forEach(function(c){html+='<div class="cause-tag">'+c+'</div>'});
+    html += '</div>';
+  }
+  if(a.suggestions.length){
+    html += '<div class="analysis-section"><h4>今日建议</h4>';
+    a.suggestions.forEach(function(s){html+='<div class="suggestion-item">'+s+'</div>'});
+    html += '</div>';
+  }
+  el.innerHTML = html;
+}
+
+/* ====== Analysis: Comparison ====== */
+function renderComparison(dateStr){
+  var rec = getRecord(dateStr);
+  var curW = rec&&rec.weight?rec.weight:null;
+  var prevDate = getPrevDate(dateStr);
+  var prevRec = prevDate?getRecord(prevDate):null;
+  var prevW = prevRec&&prevRec.weight?prevRec.weight:null;
+  var weekAgoDate = addDays(dateStr,-7);
+  var weekRec = getRecord(weekAgoDate);
+  if(!weekRec){
+    for(var i=1;i<=7;i++){
+      var d = addDays(dateStr,-7+i);
+      var r = getRecord(d);
+      if(r&&r.weight){weekRec=r;break}
+    }
+  }
+  var weekW = weekRec&&weekRec.weight?weekRec.weight:null;
+  var startW = appData.settings.startWeight;
+  var targetW = appData.settings.targetWeight;
+
+  function fmt(cur,prev,suffix){
+    if(!cur||!prev) return '—';
+    var diff = round005(cur-prev);
+    if(Math.abs(diff)<0.05) return '<span class="val">持平</span>';
+    var cls = diff>0?'up':'down';
+    var sign = diff>0?'+':'−';
+    return '<span class="val '+cls+'">'+sign+Math.abs(diff).toFixed(2)+suffix+'</span>';
+  }
+  document.getElementById('vs-yesterday').innerHTML = fmt(curW,prevW,'kg');
+  document.getElementById('vs-lastweek').innerHTML = fmt(curW,weekW,'kg');
+  document.getElementById('vs-start').innerHTML = (curW&&startW)?(curW<startW?'<span class="val down">−'+(startW-curW).toFixed(2)+'kg</span>':(curW>startW?'<span class="val up">+'+(curW-startW).toFixed(2)+'kg</span>':'<span class="val">持平</span>')):'—';
+  document.getElementById('vs-target').innerHTML = (curW&&targetW)?(curW<=targetW?'<span class="val down">已达标</span>':'还差 <span class="val">'+(curW-targetW).toFixed(2)+'kg</span>'):'—';
+}
+
+/* ====== Analysis: Weekly ====== */
+function getWeeklyAverages(){
+  var dates = getAllDates();
+  if(!dates.length) return [];
+  var weeks = {};
+  dates.forEach(function(d){
+    var ws = getWeekStart(d);
+    if(!weeks[ws]) weeks[ws] = {sum:0,count:0};
+    weeks[ws].sum += appData.records[d].weight;
+    weeks[ws].count++;
+  });
+  return Object.keys(weeks).sort().map(function(k){
+    return {weekStart:k,average:weeks[k].sum/weeks[k].count,count:weeks[k].count};
+  });
+}
+function renderWeeklyAnalysis(){
+  var data = getWeeklyAverages();
+  var el = document.getElementById('weekly-analysis');
+  if(!data.length){el.innerHTML='<div style="color:var(--text-muted);text-align:center;padding:24px">暂无周分析数据</div>';return}
+  var cur = data[data.length-1];
+  var prev = data.length>1?data[data.length-2]:null;
+  var trendHtml = '';
+  if(prev){
+    var diff = cur.average-prev.average;
+    var cls = diff>0.05?'up':(diff<-0.05?'down':'stable');
+    var icon = diff>0.05?'↑':(diff<-0.05?'↓':'→');
+    trendHtml = '<div class="weekly-trend '+cls+'">较上周 '+icon+' '+Math.abs(diff).toFixed(2)+'kg</div>';
+  }
+  el.innerHTML =
+    '<div class="weekly-stats">'+
+      '<div class="weekly-stat"><div class="label">本周平均</div><div class="val">'+cur.average.toFixed(2)+'kg</div></div>'+
+      '<div class="weekly-stat"><div class="label">记录天数</div><div class="val">'+cur.count+'天</div></div>'+
+    '</div>'+
+    trendHtml+
+    '<div class="chart-container"><canvas id="weekly-chart"></canvas></div>';
+  setTimeout(renderWeeklyChart,50);
+}
+function renderWeeklyChart(){
+  var canvas = document.getElementById('weekly-chart');
+  if(!canvas) return;
+  var data = getWeeklyAverages();
+  if(data.length<1) return;
+  if(weeklyChart) weeklyChart.destroy();
+  weeklyChart = new Chart(canvas,{
+    type:'line',
+    data:{
+      labels:data.map(function(w){return formatDateShort(w.weekStart)}),
+      datasets:[{
+        label:'周平均体重 (kg)',
+        data:data.map(function(w){return parseFloat(w.average.toFixed(2))}),
+        borderColor:'#6B7A4E',
+        backgroundColor:'rgba(107,122,78,0.08)',
+        fill:true,
+        tension:0.3,
+        pointRadius:5,
+        pointBackgroundColor:'#6B7A4E',
+        borderWidth:2
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:true,position:'top',labels:{font:{size:12,family:'"Noto Serif SC",serif'},color:'#3A3A3A'}}},
+      scales:{
+        x:{ticks:{color:'#9E9E9E',font:{family:'"Noto Serif SC",serif'}},grid:{display:false}},
+        y:{ticks:{color:'#9E9E9E',font:{family:'"Noto Serif SC",serif'}},grid:{color:'#EBEBEB'}}
+      }
+    }
+  });
+}
+
+/* ====== Analysis: Weight Chart ====== */
+function renderWeightChart(){
+  var container = document.getElementById('weight-chart-container');
+  if(!container) return;
+  var dates = getAllDates();
+  if(dates.length<2){
+    container.innerHTML = '<div class="empty-chart">至少需要2天数据才能显示趋势图</div>';
+    return;
+  }
+  if(!document.getElementById('weight-chart')){
+    container.innerHTML = '<canvas id="weight-chart"></canvas>';
+  }
+  var canvas = document.getElementById('weight-chart');
+  if(!canvas) return;
+  var recent = dates.slice(-30);
+  var weights = recent.map(function(d){return appData.records[d].weight});
+  var ma = weights.map(function(_,i){
+    var s = Math.max(0,i-6);
+    var slice = weights.slice(s,i+1);
+    var sum = 0;for(var j=0;j<slice.length;j++) sum+=slice[j];
+    return sum/slice.length;
+  });
+  if(weightChart) weightChart.destroy();
+  var datasets = [{
+    label:'每日体重 (kg)',
+    data:weights,
+    borderColor:'#4A6B8A',
+    backgroundColor:'rgba(74,107,138,0.08)',
+    fill:true,
+    tension:0.3,
+    pointRadius:3,
+    pointBackgroundColor:'#4A6B8A',
+    borderWidth:2
+  },{
+    label:'7日均线 (kg)',
+    data:ma,
+    borderColor:'#D89A9A',
+    fill:false,
+    tension:0.4,
+    pointRadius:0,
+    borderWidth:2,
+    borderDash:[5,5]
+  }];
+  if(appData.settings.targetWeight){
+    datasets.push({
+      label:'目标 (kg)',
+      data:recent.map(function(){return appData.settings.targetWeight}),
+      borderColor:'#3A3A3A',
+      fill:false,
+      pointRadius:0,
+      borderWidth:1.5,
+      borderDash:[10,5]
+    });
+  }
+  weightChart = new Chart(canvas,{
+    type:'line',
+    data:{labels:recent.map(formatDateShort),datasets:datasets},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:true,position:'top',labels:{font:{size:11,family:'"Noto Serif SC",serif'},color:'#3A3A3A',boxWidth:15}}},
+      scales:{
+        x:{ticks:{color:'#9E9E9E',font:{family:'"Noto Serif SC",serif'}},grid:{display:false}},
+        y:{ticks:{color:'#9E9E9E',font:{family:'"Noto Serif SC",serif'}},grid:{color:'#EBEBEB'}}
+      }
+    }
+  });
+}
+
+/* ====== Analysis: Monthly ====== */
+function getMonthlySummary(){
+  var dates = getAllDates();
+  if(!dates.length) return null;
+  var now = parseDate(currentDate);
+  var y = now.getFullYear(), m = now.getMonth();
+  var monthDates = dates.filter(function(d){
+    var dt = parseDate(d);
+    return dt.getFullYear()===y && dt.getMonth()===m;
+  });
+  if(!monthDates.length) return null;
+  var first = appData.records[monthDates[0]].weight;
+  var last = appData.records[monthDates[monthDates.length-1]].weight;
+  var total = round005(last-first);
+  var avg = 0;
+  monthDates.forEach(function(d){avg+=appData.records[d].weight});
+  avg = avg/monthDates.length;
+  return {first:first,last:last,total:total,days:monthDates.length,avg:avg};
+}
+function getAchievements(){
+  var ach = [];
+  var dates = getAllDates();
+  var total = dates.length;
+  var start = appData.settings.startWeight;
+  var cur = getCurrentWeight();
+  if(total>=7) ach.push({icon:'🔥',name:'坚持7天'});
+  if(total>=14) ach.push({icon:'⭐',name:'坚持14天'});
+  if(total>=30) ach.push({icon:'🌟',name:'坚持30天'});
+  if(total>=60) ach.push({icon:'🏆',name:'坚持60天'});
+  if(total>=100) ach.push({icon:'👑',name:'坚持100天'});
+  if(start&&cur){
+    var lost = start-cur;
+    if(lost>=1) ach.push({icon:'🥉',name:'减重1kg'});
+    if(lost>=3) ach.push({icon:'🥈',name:'减重3kg'});
+    if(lost>=5) ach.push({icon:'🥇',name:'减重5kg'});
+    if(lost>=10) ach.push({icon:'💎',name:'减重10kg'});
+    if(appData.settings.targetWeight&&cur<=appData.settings.targetWeight) ach.push({icon:'🎓',name:'达标'});
+  }
+  return ach;
+}
+function renderMonthlySummary(){
+  var s = getMonthlySummary();
+  var el = document.getElementById('monthly-summary');
+  if(!s){el.innerHTML='<div style="color:var(--text-muted);text-align:center;padding:24px">本月暂无记录数据</div>';return}
+  var lostClass = s.total<0?'down':(s.total>0?'up':'');
+  var lostText = s.total<0?'−'+Math.abs(s.total).toFixed(2):'+'+s.total.toFixed(2);
+  var html = '<div class="monthly-grid">';
+  html += '<div class="month-item"><div class="val '+lostClass+'">'+lostText+'kg</div><div class="label">本月减重</div></div>';
+  html += '<div class="month-item"><div class="val">'+s.days+'天</div><div class="label">记录天数</div></div>';
+  html += '<div class="month-item"><div class="val">'+s.avg.toFixed(2)+'</div><div class="label">月均体重 kg</div></div>';
+  html += '<div class="month-item"><div class="val">'+s.first.toFixed(2)+'</div><div class="label">月初体重 kg</div></div>';
+  html += '</div>';
+  var ach = getAchievements();
+  if(ach.length){
+    html += '<div style="margin-top:16px"><h4 style="font-size:13px;color:var(--text-muted);margin-bottom:10px">已获得徽章</h4><div class="achievements">';
+    ach.forEach(function(a){html+='<div class="achievement-badge"><div class="icon">'+a.icon+'</div><div class="name">'+a.name+'</div></div>'});
+    html += '</div></div>';
+  }else{
+    html += '<div style="text-align:center;color:var(--text-muted);font-size:13px;padding:12px">坚持记录解锁更多徽章</div>';
+  }
+  el.innerHTML = html;
+}
+
+/* ====== Render Analysis (all) ====== */
+function renderAnalysis(){
+  renderComparison(currentDate);
+  renderDailyAnalysis(currentDate);
+  renderWeeklyAnalysis();
+  renderMonthlySummary();
+}
+
+/* ====== Motivation ====== */
+window.nextMotivationPhoto = function(){
+  if(!appData.customPhotos.length) return;
+  currentPhotoIdx = (currentPhotoIdx+1)%appData.customPhotos.length;
+  renderMotivationImage();
+};
+window.prevMotivationPhoto = function(){
+  if(!appData.customPhotos.length) return;
+  currentPhotoIdx = (currentPhotoIdx-1+appData.customPhotos.length)%appData.customPhotos.length;
+  renderMotivationImage();
+};
+function getDailyQuote(){
+  return QUOTES[dayOfYear(getTodayStr())%QUOTES.length];
+}
+function renderMotivation(){
+  document.getElementById('daily-quote').textContent = getDailyQuote();
+  renderMotivationImage();
+  renderProgress();
+  renderAchievements();
+  renderPhotoGallery();
+}
+function renderMotivationImage(){
+  var el = document.getElementById('motivation-img');
+  var counter = document.getElementById('photo-counter');
+  if(appData.customPhotos.length){
+    currentPhotoIdx = currentPhotoIdx % appData.customPhotos.length;
+    el.innerHTML = '<img src="'+appData.customPhotos[currentPhotoIdx]+'" alt="每日动力">';
+    counter.textContent = (currentPhotoIdx+1)+' / '+appData.customPhotos.length;
+  }else{
+    el.innerHTML = '<div class="motivation-placeholder"><div class="big-emoji">💪</div><p>上传你喜欢的女团照片</p><p>或健身偶像照片</p><p>作为每日减肥动力</p></div>';
+    counter.textContent = '';
+  }
+}
+function renderProgress(){
+  var start = appData.settings.startWeight;
+  var target = appData.settings.targetWeight;
+  var cur = getCurrentWeight();
+  var progress = 0;
+  if(start&&target&&cur){
+    var total = start-target;
+    var done = start-cur;
+    if(total>0) progress = Math.max(0,Math.min(100,(done/total)*100));
+  }
+  var circ = 2*Math.PI*56;
+  var offset = circ*(1-progress/100);
+  var ring = document.getElementById('progress-ring-circle');
+  if(ring) ring.style.strokeDashoffset = offset;
+  document.getElementById('ring-percent').textContent = Math.round(progress)+'%';
+  document.getElementById('pi-start').textContent = start?start.toFixed(2)+'kg':'—';
+  document.getElementById('pi-current').textContent = cur?cur.toFixed(2)+'kg':'—';
+  document.getElementById('pi-target').textContent = target?target.toFixed(2)+'kg':'—';
+  var lost = (start&&cur)?round005(start-cur):null;
+  document.getElementById('pi-lost').textContent = lost!==null?(lost>=0?'−'+lost.toFixed(2)+'kg':'+'+Math.abs(lost).toFixed(2)+'kg'):'—';
+}
+function renderAchievements(){
+  var el = document.getElementById('achievements');
+  var ach = getAchievements();
+  if(!ach.length){el.innerHTML='<div style="text-align:center;color:var(--text-muted);font-size:13px;padding:12px">坚持记录解锁徽章</div>';return}
+  el.innerHTML = ach.map(function(a){
+    return '<div class="achievement-badge"><div class="icon">'+a.icon+'</div><div class="name">'+a.name+'</div></div>';
+  }).join('');
+}
+
+/* ====== Photo Upload ====== */
+window.handlePhotoUpload = function(files){
+  if(!files||!files.length) return;
+  var remaining = files.length;
+  var uploaded = 0;
+  var failed = 0;
+  Array.from(files).forEach(function(file){
+    if(file.size>10*1024*1024){failed++;remaining--;return}
+    var reader = new FileReader();
+    reader.onload = function(e){
+      var img = new Image();
+      img.onload = function(){
+        var canvas = document.createElement('canvas');
+        var maxDim = 600;
+        var w = img.width, h = img.height;
+        if(w>h&&w>maxDim){h=h*maxDim/w;w=maxDim}
+        else if(h>maxDim){w=w*maxDim/h;h=maxDim}
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        var dataUrl = canvas.toDataURL('image/jpeg',0.85);
+        appData.customPhotos.push(dataUrl);
+        remaining--;
+        uploaded++;
+        if(remaining===0){
+          try{saveData();}catch(e){
+            appData.customPhotos.splice(appData.customPhotos.length-uploaded,uploaded);
+            showToast('存储空间不足，请删除部分旧照片','error');
+            return;
+          }
+          currentPhotoIdx = appData.customPhotos.length-1;
+          renderMotivationImage();
+          renderPhotoGallery();
+          showToast('上传 '+uploaded+' 张照片成功','success');
+        }
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+  document.getElementById('photo-upload-input').value = '';
+};
+function renderPhotoGallery(){
+  var el = document.getElementById('photo-gallery');
+  if(!appData.customPhotos.length){el.innerHTML='';return}
+  el.innerHTML = appData.customPhotos.map(function(p,i){
+    return '<div class="photo-thumb '+(i===currentPhotoIdx?'active':'')+'" onclick="selectPhoto('+i+')">'+
+      '<img src="'+p+'" alt="动力照片">'+
+      '<button class="del-btn" onclick="event.stopPropagation();deletePhoto('+i+')">✕</button>'+
+    '</div>';
+  }).join('');
+}
+window.selectPhoto = function(idx){
+  currentPhotoIdx = idx;
+  renderMotivationImage();
+  renderPhotoGallery();
+};
+window.deletePhoto = function(idx){
+  if(!confirm('确定删除这张照片吗？')) return;
+  appData.customPhotos.splice(idx,1);
+  if(currentPhotoIdx>=appData.customPhotos.length) currentPhotoIdx = 0;
+  saveData();
+  renderMotivationImage();
+  renderPhotoGallery();
+  showToast('照片已删除','info');
+};
+
+/* ====== Settings ====== */
+window.openSettings = function(){
+  document.getElementById('setting-start-weight').value = appData.settings.startWeight||'';
+  document.getElementById('setting-target-weight').value = appData.settings.targetWeight||'';
+  document.getElementById('setting-height').value = appData.settings.height||'';
+  document.getElementById('settings-modal').classList.add('active');
+};
+window.closeSettings = function(){
+  document.getElementById('settings-modal').classList.remove('active');
+};
+window.saveSettings = function(){
+  appData.settings.startWeight = parseFloat(document.getElementById('setting-start-weight').value)||null;
+  appData.settings.targetWeight = parseFloat(document.getElementById('setting-target-weight').value)||null;
+  appData.settings.height = parseInt(document.getElementById('setting-height').value)||null;
+  saveData();
+  updateQuickStats();
+  renderProgress();
+  closeSettings();
+  showToast('设置已保存','success');
+};
+window.exportData = function(){
+  var data = JSON.stringify(appData,null,2);
+  var blob = new Blob([data],{type:'application/json'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'fat-loss-data-'+getTodayStr()+'.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('数据已导出','success');
+};
+window.importData = function(file){
+  if(!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      var data = JSON.parse(e.target.result);
+      if(data.settings) appData.settings = data.settings;
+      if(data.records) appData.records = data.records;
+      if(data.customPhotos) appData.customPhotos = data.customPhotos;
+      saveData();
+      loadFormFromRecord(currentDate);
+      updateQuickStats();
+      renderAnalysis();
+      renderMotivation();
+      showToast('数据导入成功','success');
+    }catch(err){
+      showToast('导入失败：文件格式错误','error');
+    }
+  };
+  reader.readAsText(file);
+};
+window.clearAllData = function(){
+  if(!confirm('确定要清除所有数据吗？此操作不可恢复！建议先导出数据备份。')) return;
+  if(!confirm('再次确认：清除后所有记录将永久丢失！')) return;
+  appData = {settings:{},records:{},customPhotos:[]};
+  localStorage.removeItem(STORE_KEY);
+  loadFormFromRecord(currentDate);
+  updateQuickStats();
+  renderAnalysis();
+  renderMotivation();
+  closeSettings();
+  showToast('所有数据已清除','info');
+};
+
+/* ====== Toast ====== */
+function showToast(msg,type){
+  var container = document.getElementById('toast-container');
+  var toast = document.createElement('div');
+  toast.className = 'toast '+(type||'info');
+  toast.textContent = msg;
+  container.appendChild(toast);
+  setTimeout(function(){toast.remove()},3000);
+}
+
+/* ====== Init ====== */
+function init(){
+  loadData();
+  var today = new Date();
+  var wd = ['日','一','二','三','四','五','六'];
+  document.getElementById('header-date').textContent =
+    today.getFullYear()+'年'+(today.getMonth()+1)+'月'+today.getDate()+'日 星期'+wd[today.getDay()];
+  renderExerciseGrid();
+  initPillGroups();
+  loadFormFromRecord(currentDate);
+  updateQuickStats();
+  if(!appData.settings.startWeight && !appData.settings.targetWeight && getAllDates().length===0){
+    setTimeout(function(){
+      openSettings();
+      showToast('欢迎使用！请先设置基本信息','info');
+    },500);
+  }
+}
+
+/* ====== Back to Top ====== */
+window.addEventListener('scroll', function(){
+  var btn = document.getElementById('back-to-top');
+  if(!btn) return;
+  var rect = document.getElementById('tab-record');
+  if(!rect || !rect.classList.contains('active')){
+    btn.classList.remove('visible');
+    return;
+  }
+  if(window.scrollY > 400){
+    btn.classList.add('visible');
+  } else {
+    btn.classList.remove('visible');
+  }
+});
+
+window.scrollToTop = function(){
+  window.scrollTo({top:0,behavior:'smooth'});
+};
+
+document.addEventListener('DOMContentLoaded',init);
+
+})();
+</script>
+</body>
+</html>

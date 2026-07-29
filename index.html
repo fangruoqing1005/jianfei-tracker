@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 /* =================================================================
  * 减脂管理工作台 — 纯白北欧复古印刷风格
@@ -1203,6 +1204,15 @@ textarea.form-input{resize:vertical;min-height:40px}
         <input type="file" accept=".json" style="display:none" onchange="importData(this.files[0])">
       </label>
       <button class="btn-danger" onclick="clearAllData()">清除所有数据</button>
+      <div class="modal-divider"></div>
+      <h3>☁ 云同步 (Supabase)</h3>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px">上传后数据安全存储在云端，换设备也能恢复。首次使用请先在 Supabase 中执行建表 SQL。</p>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <button class="btn-secondary" onclick="cloudUpload()" id="cloud-upload-btn" style="margin-bottom:0">⬆ 上传到云端</button>
+        <button class="btn-secondary" onclick="cloudDownload()" id="cloud-download-btn" style="margin-bottom:0">⬇ 从云端下载</button>
+      </div>
+      <div id="cloud-sync-status" style="font-size:12px;color:var(--text-muted);text-align:center;margin-bottom:8px;min-height:18px"></div>
+      <p style="font-size:11px;color:var(--text-muted);line-height:1.5">首次使用说明：<br>1. 打开 <a href="https://supabase.com/dashboard/project/bdtueuwyatnozybbbucd/sql/new" target="_blank" style="color:var(--text-title)">Supabase SQL Editor</a><br>2. 粘贴建表 SQL 并执行<br>3. 回到本页点击"上传到云端"即可</p>
     </div>
   </div>
 </div>
@@ -1236,6 +1246,9 @@ textarea.form-input{resize:vertical;min-height:40px}
 
 /* ====== Constants ====== */
 var STORE_KEY = 'fatLossWorkbench_v1';
+var SUPABASE_URL = 'https://bdtueuwyatnozybbbucd.supabase.co';
+var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkdHVldXd5YXRub3p5YmJidWNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzMDk4MjcsImV4cCI6MjEwMDg4NTgyN30.RxRyBtvFsCvFY-1SpFroiyhvEKmnKsrRClh_wUYcCSE';
+var supabase;
 var EXERCISES = ['慢走','快走','爬坡','跑步','哑铃训练','瑜伽','游泳','骑行','跳绳','HIIT','普拉提','力量训练'];
 var QUOTES = [
   '每一个坚持的今天，都是未来你感谢的自己。',
@@ -2154,6 +2167,104 @@ window.clearAllData = function(){
   showToast('所有数据已清除','info');
 };
 
+/* ====== Cloud Sync (Supabase) ====== */
+function initSupabase(){
+  if(typeof supabase !== 'undefined' && supabase) return supabase;
+  try{
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    return supabase;
+  }catch(e){
+    console.error('Supabase init failed:',e);
+    return null;
+  }
+}
+
+function setSyncStatus(msg,isError){
+  var el = document.getElementById('cloud-sync-status');
+  if(el){
+    el.textContent = msg;
+    el.style.color = isError ? 'var(--danger)' : 'var(--text-muted)';
+  }
+}
+
+window.cloudUpload = async function(){
+  var client = initSupabase();
+  if(!client){ setSyncStatus('初始化失败，请刷新后重试',true); return; }
+  setSyncStatus('正在上传...');
+  var btn = document.getElementById('cloud-upload-btn');
+  if(btn){ btn.disabled = true; btn.textContent = '上传中...'; }
+  try{
+    // Upload all records one by one
+    var dates = getAllDates();
+    var success = 0, fail = 0;
+    for(var i = 0; i < dates.length; i++){
+      var d = dates[i];
+      var rec = appData.records[d];
+      var payload = {date:d, data:rec, updated_at:new Date().toISOString()};
+      var {error} = await client.from('records').upsert(payload,{onConflict:'date'});
+      if(error){ fail++; console.error('Upload error for '+d+':',error); }
+      else { success++; }
+    }
+    // Upload settings
+    var {error:serr} = await client.from('records').upsert({
+      date:'__settings__',
+      data:appData.settings,
+      updated_at:new Date().toISOString()
+    },{onConflict:'date'});
+    if(serr){ fail++; } else { success++; }
+    setSyncStatus('上传完成：成功 '+success+'，失败 '+fail);
+  }catch(e){
+    setSyncStatus('上传失败：'+e.message,true);
+  }
+  if(btn){ btn.disabled = false; btn.textContent = '⬆ 上传到云端'; }
+};
+
+window.cloudDownload = async function(){
+  var client = initSupabase();
+  if(!client){ setSyncStatus('初始化失败，请刷新后重试',true); return; }
+  if(!confirm('从云端下载将覆盖本地数据，确定继续？')) return;
+  setSyncStatus('正在下载...');
+  var btn = document.getElementById('cloud-download-btn');
+  if(btn){ btn.disabled = true; btn.textContent = '下载中...'; }
+  try{
+    var allRows = [];
+    var from = 0, pageSize = 1000;
+    var hasMore = true;
+    while(hasMore){
+      var {data,error} = await client.from('records').select('*').range(from,from+pageSize-1);
+      if(error){ setSyncStatus('下载失败：'+error.message,true); if(btn){btn.disabled=false;btn.textContent='⬇ 从云端下载';} return; }
+      if(data && data.length > 0){
+        allRows = allRows.concat(data);
+        from += pageSize;
+        if(data.length < pageSize) hasMore = false;
+      } else { hasMore = false; }
+    }
+    // Merge into appData
+    var newRecords = {};
+    var newSettings = {};
+    for(var i = 0; i < allRows.length; i++){
+      var row = allRows[i];
+      if(row.date === '__settings__'){
+        newSettings = row.data;
+      } else {
+        newRecords[row.date] = row.data;
+      }
+    }
+    appData.records = newRecords;
+    appData.settings = newSettings;
+    saveData();
+    loadFormFromRecord(currentDate);
+    updateQuickStats();
+    renderAnalysis();
+    renderMotivation();
+    setSyncStatus('下载完成：共 '+allRows.length+' 条记录');
+    showToast('云端数据已同步','success');
+  }catch(e){
+    setSyncStatus('下载失败：'+e.message,true);
+  }
+  if(btn){ btn.disabled = false; btn.textContent = '⬇ 从云端下载'; }
+};
+
 /* ====== Toast ====== */
 function showToast(msg,type){
   var container = document.getElementById('toast-container');
@@ -2166,6 +2277,7 @@ function showToast(msg,type){
 
 /* ====== Init ====== */
 function init(){
+  initSupabase();
   loadData();
   var today = new Date();
   var wd = ['日','一','二','三','四','五','六'];

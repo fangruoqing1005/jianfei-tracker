@@ -36,24 +36,27 @@ Deno.serve(async (req: Request) => {
     const lost = (startW !== "未知" && curW !== "未知")
       ? (parseFloat(startW as string) - parseFloat(curW as string)).toFixed(2) : "未知";
 
-    // 构建7天数据摘要
+    // 构建7天数据摘要（带输入截断，控制 token 消耗）
+    const MAX_NOTE_LEN = 60;  // 每条备注最多60字
+    const MAX_RECORDS = 7;    // 最多7天
     let recordsSummary = "";
-    for (const r of records.slice(-7)) {
+    for (const r of records.slice(-MAX_RECORDS)) {
       const data = r.data || {};
-      const weight = data.weight ? data.weight + "kg" : "未记录";
-      const exercise = (data.exercise || []).join("、") || "无";
-      const sleep = data.sleep || "未记录";
-      const salt = data.salt || "未记录";
-      const carbs = data.carbs || "未记录";
-      const water = data.water ? data.water + "ml" : "未记录";
-      const bowel = data.bowel !== undefined ? (data.bowel ? "已排便" : "未排便") : "未记录";
-      const note = data.note || "";
-      const menstrual = data.menstrual ? ("处于" + (data.menstrual.phase || "未知阶段")) : "无";
+      const weight = data.weight ? data.weight + "kg" : "-";
+      const exercise = (data.exercise || []).join("、") || "-";
+      const sleep = data.sleep || "-";
+      const salt = data.salt || "-";
+      const carbs = data.carbs || "-";
+      const water = data.water ? data.water + "ml" : "-";
+      const bowel = data.bowel !== undefined ? (data.bowel ? "已排" : "未排") : "-";
+      const menstrual = data.menstrual ? (data.menstrual.phase || "未知") : "-";
+      const rawNote = data.note || "";
+      const note = rawNote.length > MAX_NOTE_LEN ? rawNote.slice(0, MAX_NOTE_LEN) + "…" : rawNote;
 
       recordsSummary += [
-        `${r.date}: 体重${weight}，运动[${exercise}]，睡眠${sleep}，盐分${salt}，碳水${carbs}，饮水${water}，${bowel}，经期[${menstrual}]`,
-        note ? `备注: ${note}` : "",
-      ].filter(Boolean).join("，") + "\n";
+        `${r.date}: 体重${weight}，运动:${exercise}，睡:${sleep}h，盐:${salt}，碳水:${carbs}，水:${water}，${bowel}，经期:${menstrual}`,
+        note ? `备注:${note}` : "",
+      ].filter(Boolean).join("；") + "\n";
     }
 
     const prompt = `你是一位专业的减脂教练。请根据以下用户数据给出分析和建议。

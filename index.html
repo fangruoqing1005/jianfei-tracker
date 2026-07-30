@@ -594,6 +594,20 @@ textarea.form-input{resize:vertical;min-height:40px}
 
 /* 风格选择器 */
 .style-selector{display:flex;flex-wrap:wrap;gap:8px}
+.style-selector.compact{gap:6px}
+.style-selector.compact .style-option{padding:5px 11px;font-size:12px}
+.ai-style-section{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:10px;margin-top:12px;padding-top:12px;
+  border-top:1px dashed rgba(0,0,0,.08);
+}
+.ai-save-style-btn{
+  flex-shrink:0;padding:6px 16px;border-radius:99px;
+  border:none;background:var(--primary);color:#fff;
+  font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;
+}
+.ai-save-style-btn:hover{background:var(--primary-dark)}
+.ai-save-style-btn:disabled{opacity:.5;cursor:not-allowed}
 .style-option{
   padding:6px 14px;border-radius:99px;
   border:1px solid var(--border);background:var(--bg);
@@ -1517,13 +1531,22 @@ textarea.form-input{resize:vertical;min-height:40px}
     <div class="card ai-coach-card" id="ai-coach-card">
       <div class="card-title">
         <span class="emoji">🤖</span>AI 减脂教练
-        <span class="ai-style-badge" id="ai-style-badge" title="点击设置切换风格" onclick="openSettings();event.stopPropagation()">🌸 温柔</span>
+        <span class="ai-style-badge" id="ai-style-badge" title="当前风格">🌸 温柔</span>
       </div>
       <div class="ai-coach-loading" id="ai-coach-loading" style="display:none">
         <span class="ai-dot"></span><span class="ai-dot"></span><span class="ai-dot"></span>
         <span style="color:var(--text-muted);font-size:13px;margin-left:8px">正在生成分析...</span>
       </div>
       <div id="ai-coach-content"></div>
+      <div class="ai-style-section">
+        <div class="style-selector compact" id="ai-style-selector">
+          <button class="style-option" data-style="gentle" onclick="selectStyle('gentle')">🌸 温柔</button>
+          <button class="style-option" data-style="cheer" onclick="selectStyle('cheer')">💪 鼓励</button>
+          <button class="style-option" data-style="firm" onclick="selectStyle('firm')">😤 严厉</button>
+          <button class="style-option" data-style="pro" onclick="selectStyle('pro')">📊 专业</button>
+        </div>
+        <button class="ai-save-style-btn" id="ai-save-style-btn" onclick="saveAnalysisStyleFromCard()">保存风格</button>
+      </div>
       <div class="ai-coach-actions">
         <button class="ai-refresh-btn" id="ai-refresh-btn" onclick="refreshAIAnalysis()" title="重新生成">🔄 刷新分析</button>
       </div>
@@ -1688,15 +1711,6 @@ textarea.form-input{resize:vertical;min-height:40px}
         <div class="form-group">
           <label class="form-label">昵称</label>
           <input type="text" class="form-input" id="setting-nickname" placeholder="给自己起个昵称，让小伙伴认识你" maxlength="20">
-        </div>
-        <div class="form-group">
-          <label class="form-label">AI 教练风格</label>
-          <div class="style-selector" id="style-selector">
-            <button class="style-option" data-style="gentle" onclick="selectStyle('gentle')">🌸 温柔</button>
-            <button class="style-option" data-style="cheer" onclick="selectStyle('cheer')">💪 鼓励</button>
-            <button class="style-option" data-style="firm" onclick="selectStyle('firm')">😤 严厉</button>
-            <button class="style-option" data-style="pro" onclick="selectStyle('pro')">📊 专业</button>
-          </div>
         </div>
         <button class="btn-primary" onclick="saveNickname()" style="margin-bottom:12px">保存昵称</button>
         <div class="modal-divider"></div>
@@ -2647,23 +2661,48 @@ window.selectStyle = function(style){
   for(var i=0;i<options.length;i++){
     options[i].classList.toggle('active',options[i].dataset.style===style);
   }
-  // 保存到数据库
-  saveAnalysisStyle(style);
-  // 更新分析徽章
-  var badge = document.getElementById('ai-style-badge');
-  var styleNames = {gentle:'🌸 温柔',cheer:'💪 鼓励',firm:'😤 严厉',pro:'📊 专业'};
-  if(badge) badge.textContent = styleNames[style]||'🌸 温柔';
-  // 清除缓存，下次切到分析页刷新
-  aiAnalysisCache = null;
+  // 更新保存按钮状态
+  var saveBtn = document.getElementById('ai-save-style-btn');
+  if(saveBtn){
+    saveBtn.textContent = '保存风格';
+    saveBtn.disabled = false;
+  }
 };
 
-async function saveAnalysisStyle(style){
-  if(!currentUser) return;
+async function saveAnalysisStyleFromCard(){
+  if(!currentUser){
+    showToast('请先登录');
+    return;
+  }
   var client = initSupabase();
   if(!client) return;
+  var saveBtn = document.getElementById('ai-save-style-btn');
+  if(saveBtn){
+    saveBtn.textContent = '保存中...';
+    saveBtn.disabled = true;
+  }
   try{
-    await client.from('profiles').upsert({user_id:currentUser.id,analysis_style:style,updated_at:new Date().toISOString()});
-  }catch(e){/* ignore */}
+    await client.from('profiles').upsert({
+      user_id:currentUser.id,
+      analysis_style:currentAnalysisStyle,
+      updated_at:new Date().toISOString()
+    });
+    // 更新分析徽章
+    var badge = document.getElementById('ai-style-badge');
+    var styleNames = {gentle:'🌸 温柔',cheer:'💪 鼓励',firm:'😤 严厉',pro:'📊 专业'};
+    if(badge) badge.textContent = styleNames[currentAnalysisStyle]||'🌸 温柔';
+    // 清除缓存并刷新当前分析
+    aiAnalysisCache = null;
+    renderAIAnalysis(currentDate);
+    showToast('风格已保存');
+    if(saveBtn) saveBtn.textContent = '已保存';
+  }catch(e){
+    showToast('保存失败');
+    if(saveBtn){
+      saveBtn.textContent = '保存风格';
+      saveBtn.disabled = false;
+    }
+  }
 }
 
 // 在 loadProfileNickname 中也加载风格偏好
@@ -2678,10 +2717,20 @@ loadProfileNickname = async function(){
     var {data} = await client.from('profiles').select('analysis_style').eq('user_id',currentUser.id).limit(1);
     if(data&&data.length>0&&data[0].analysis_style){
       currentAnalysisStyle = data[0].analysis_style;
-      // 同步设置页按钮状态
+      // 同步AI卡片风格按钮状态
       var options = document.querySelectorAll('.style-option');
       for(var i=0;i<options.length;i++){
         options[i].classList.toggle('active',options[i].dataset.style===currentAnalysisStyle);
+      }
+      // 同步徽章
+      var badge = document.getElementById('ai-style-badge');
+      var styleNames = {gentle:'🌸 温柔',cheer:'💪 鼓励',firm:'😤 严厉',pro:'📊 专业'};
+      if(badge) badge.textContent = styleNames[currentAnalysisStyle]||'🌸 温柔';
+      // 同步保存按钮
+      var saveBtn = document.getElementById('ai-save-style-btn');
+      if(saveBtn){
+        saveBtn.textContent = '已保存';
+        saveBtn.disabled = true;
       }
     }
   }catch(e){/* ignore */}

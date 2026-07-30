@@ -855,6 +855,168 @@ textarea.form-input{resize:vertical;min-height:40px}
 }
 .btn-logout:hover{border-color:var(--danger);color:var(--danger)}
 
+/* ====== Groups ====== */
+.group-card{
+  border-radius:var(--radius-xl);
+  border:1px solid var(--border-light);
+  background:var(--card);
+  padding:18px;
+  margin-bottom:14px;
+  transition:all .2s;
+}
+.group-card-header{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:10px;
+}
+.group-card-name{
+  font-size:16px;font-weight:700;color:var(--text-title);
+}
+.group-card-owner-badge{
+  font-size:10px;color:var(--text-muted);
+  background:var(--bg-alt);padding:2px 8px;border-radius:12px;
+}
+.group-card-meta{
+  font-size:12px;color:var(--text-muted);margin-bottom:10px;
+}
+.group-card-meta span{display:inline-block;margin-right:14px}
+.group-card-actions{
+  display:flex;gap:8px;flex-wrap:wrap;
+}
+.group-btn-sm{
+  padding:7px 16px;
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  background:var(--card);
+  color:var(--text);
+  font-size:12px;font-weight:500;
+  cursor:pointer;
+  transition:all .2s;
+  font-family:inherit;
+}
+.group-btn-sm:hover{border-color:var(--text-title);color:var(--text-title)}
+.group-btn-sm.primary{
+  border-color:var(--text-title);background:var(--text-title);color:#fff;
+}
+.group-btn-sm.primary:hover{background:#1A1A1A}
+.group-btn-sm.danger:hover{border-color:var(--danger);color:var(--danger)}
+
+.group-form-card{
+  border-radius:var(--radius-xl);
+  border:2px dashed var(--border);
+  background:var(--bg-alt);
+  padding:18px;
+  margin-bottom:14px;
+}
+.group-form-card h4{
+  font-size:14px;font-weight:600;color:var(--text-title);margin-bottom:12px;
+}
+.group-form-row{
+  display:flex;gap:8px;align-items:flex-end;
+}
+.group-form-row input{
+  flex:1;
+  padding:10px 14px;
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  font-size:14px;outline:none;
+  background:var(--card);color:var(--text);
+  font-family:inherit;
+}
+.group-form-row input:focus{border-color:var(--text-title)}
+
+.invite-box{
+  border-radius:var(--radius-lg);
+  border:1px solid var(--border);
+  background:var(--bg);
+  padding:16px;
+  margin-bottom:14px;
+}
+.invite-box .invite-title{
+  font-size:14px;font-weight:600;color:var(--text-title);margin-bottom:8px;
+}
+.invite-box .invite-link{
+  font-size:12px;color:var(--text-muted);
+  word-break:break-all;
+  background:var(--bg-alt);
+  padding:10px 14px;
+  border-radius:var(--radius-sm);
+  margin-bottom:8px;
+  line-height:1.5;
+}
+.invite-box .invite-copy-btn{
+  padding:8px 16px;
+  border:1px solid var(--text-title);
+  border-radius:var(--radius-sm);
+  background:var(--text-title);color:#fff;
+  font-size:12px;font-weight:600;
+  cursor:pointer;font-family:inherit;
+  transition:all .2s;
+}
+.invite-box .invite-copy-btn:hover{background:#1A1A1A}
+
+.join-box{
+  border-radius:var(--radius-xl);
+  border:2px dashed var(--border);
+  background:var(--bg-alt);
+  padding:20px;
+  margin-bottom:14px;
+}
+.join-box h4{
+  font-size:14px;font-weight:600;color:var(--text-title);margin-bottom:12px;
+}
+.join-box .join-link-input{
+  width:100%;
+  padding:10px 14px;
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  font-size:14px;outline:none;
+  background:var(--card);color:var(--text);
+  margin-bottom:10px;
+  font-family:inherit;
+}
+.join-box .join-link-input:focus{border-color:var(--text-title)}
+
+.share-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 0;
+  border-bottom:1px solid var(--border-light);
+}
+.share-row:last-child{border-bottom:none}
+.share-row .share-label{
+  font-size:14px;color:var(--text);
+}
+.share-row .share-desc{
+  font-size:11px;color:var(--text-muted);
+}
+.share-toggle{
+  position:relative;
+  width:52px;height:28px;
+  border-radius:14px;
+  border:none;
+  background:var(--border);
+  cursor:pointer;
+  transition:background .3s;
+  flex-shrink:0;
+}
+.share-toggle.on{background:var(--text-title)}
+.share-toggle::after{
+  content:'';
+  position:absolute;
+  top:3px;left:3px;
+  width:22px;height:22px;
+  border-radius:50%;
+  background:#fff;
+  transition:transform .3s;
+}
+.share-toggle.on::after{transform:translateX(24px)}
+
+.empty-state{
+  text-align:center;padding:40px 20px;color:var(--text-muted);
+}
+.empty-state .empty-icon{font-size:48px;margin-bottom:12px}
+.empty-state .empty-text{font-size:14px;line-height:1.6}
+.empty-state .empty-hint{font-size:12px;margin-top:6px}
+
 /* ====== Date Picker ====== */
 .date-picker-modal .modal-content{max-width:340px;padding:22px}
 .dp-header{
@@ -965,6 +1127,7 @@ textarea.form-input{resize:vertical;min-height:40px}
   <div class="tab active" data-tab="record" onclick="switchTab('record')">每日记录</div>
   <div class="tab" data-tab="analysis" onclick="switchTab('analysis')">分析建议</div>
   <div class="tab" data-tab="motivation" onclick="switchTab('motivation')">每日动力</div>
+  <div class="tab" data-tab="groups" onclick="switchTab('groups')">群组</div>
 </nav>
 
 <!-- ====== Record Tab ====== -->
@@ -1239,6 +1402,34 @@ textarea.form-input{resize:vertical;min-height:40px}
   </div>
 </section>
 
+<!-- ====== Groups Tab ====== -->
+<section class="tab-content" id="tab-groups">
+  <div class="container">
+
+    <!-- 加入群组 -->
+    <div class="join-box" id="join-box" style="display:none">
+      <h4>🔗 通过邀请链接加入群组</h4>
+      <input class="join-link-input" id="join-link-input" type="text" placeholder="粘贴邀请链接或邀请码...">
+      <button class="group-btn-sm primary" onclick="joinByLink()" style="width:100%;padding:12px;font-size:14px">加入群组</button>
+      <div id="join-error" style="font-size:12px;color:var(--danger);text-align:center;margin-top:8px;min-height:18px"></div>
+    </div>
+
+    <!-- 创建群组 -->
+    <div class="group-form-card" id="create-group-card">
+      <h4>✨ 创建新群组</h4>
+      <div class="group-form-row">
+        <input id="new-group-name" type="text" placeholder="输入群组名称，如：闺蜜减肥圈">
+        <button class="group-btn-sm primary" onclick="createGroup()" style="flex-shrink:0;padding:10px 20px;font-size:14px">创建</button>
+      </div>
+      <div id="create-group-error" style="font-size:12px;color:var(--danger);text-align:center;margin-top:8px;min-height:18px"></div>
+    </div>
+
+    <!-- 群组列表 -->
+    <div id="group-list"></div>
+
+  </div>
+</section>
+
 </div>
 
 <!-- ====== Settings Modal ====== -->
@@ -1442,6 +1633,9 @@ window.switchTab = function(tabName){
   }
   if(tabName==='motivation'){
     renderMotivation();
+  }
+  if(tabName==='groups'){
+    loadMyGroups();
   }
 };
 
@@ -2503,11 +2697,303 @@ function showToast(msg,type){
   setTimeout(function(){toast.remove()},3000);
 }
 
+/* ====== Groups ====== */
+window.loadMyGroups = async function(){
+  if(!currentUser){
+    document.getElementById('group-list').innerHTML = '<div class="empty-state"><div class="empty-icon">🔒</div><div class="empty-text">请先登录后使用群组功能</div></div>';
+    document.getElementById('create-group-card').style.display = 'none';
+    document.getElementById('join-box').style.display = 'none';
+    return;
+  }
+  document.getElementById('create-group-card').style.display = 'block';
+  document.getElementById('join-box').style.display = 'block';
+  // 显示加载中
+  document.getElementById('group-list').innerHTML = '<div class="empty-state"><div class="empty-text">加载中...</div></div>';
+  var client = initSupabase();
+  if(!client) return;
+  try{
+    // 查询我的群组
+    var {data:memberships,error:err1} = await client.from('group_members').select('group_id').eq('user_id',currentUser.id);
+    if(err1){ showGroupError(); return; }
+    var myGroupIds = (memberships||[]).map(function(m){return m.group_id;});
+
+    // 查询所有群组的基本信息
+    var {data:allGroups,error:err2} = await client.from('groups').select('*').order('created_at',{ascending:false});
+    if(err2){ showGroupError(); return; }
+
+    var groups = (allGroups||[]).filter(function(g){
+      return myGroupIds.indexOf(g.id) !== -1;
+    });
+
+    // 查询每个群组的成员数和分享设置
+    var groupData = [];
+    for(var i=0;i<groups.length;i++){
+      var g = groups[i];
+      var {count:c,error:err3} = await client.from('group_members').select('*',{count:'exact',head:true}).eq('group_id',g.id);
+      var memberCount = (err3?0:(c||0));
+      // 查询当前用户在该群组的分享设置
+      var {data:sd} = await client.from('shared_data').select('*').eq('user_id',currentUser.id).eq('group_id',g.id).limit(1);
+      var share = (sd&&sd.length>0) ? sd[0] : {share_weight:false,share_achievements:false,share_checkin:false};
+
+      // 查询成员
+      var {data:members} = await client.from('group_members').select('user_id').eq('group_id',g.id);
+      var memberIds = (members||[]).map(function(m){return m.user_id;});
+
+      groupData.push({
+        id:g.id,
+        name:g.name,
+        owner_id:g.owner_id,
+        invite_code:g.invite_code,
+        memberCount:memberCount,
+        memberIds:memberIds,
+        share:share
+      });
+    }
+    renderGroupList(groupData);
+  }catch(e){
+    console.error('loadMyGroups error:',e);
+    showGroupError();
+  }
+};
+
+function showGroupError(){
+  document.getElementById('group-list').innerHTML = '<div class="empty-state"><div class="empty-icon">⚠</div><div class="empty-text">加载失败，请刷新重试</div></div>';
+}
+
+function renderGroupList(groups){
+  var el = document.getElementById('group-list');
+  var isOwner = function(g){return g.owner_id===currentUser.id;};
+
+  if(groups.length===0){
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-text">还没有加入任何群组</div><div class="empty-hint">创建一个群组，或通过邀请链接加入朋友的群组</div></div>';
+    return;
+  }
+
+  var html = '';
+  for(var i=0;i<groups.length;i++){
+    var g = groups[i];
+    var own = isOwner(g);
+    var link = 'https://www.hotgirlforever.com.cn/?join=' + encodeURIComponent(g.invite_code);
+    html += '<div class="card group-card">';
+    html += '<div class="group-card-header">';
+    html += '<div class="group-card-name">'+escHtml(g.name)+'</div>';
+    html += '<div class="group-card-owner-badge">'+(own?'我创建的':'成员')+'</div>';
+    html += '</div>';
+    html += '<div class="group-card-meta"><span>👥 '+g.memberCount+' 人</span><span>🔑 '+escHtml(g.invite_code)+'</span></div>';
+    // 邀请链接
+    html += '<div class="invite-box">';
+    html += '<div class="invite-title">📨 邀请链接</div>';
+    html += '<div class="invite-link">'+escHtml(link)+'</div>';
+    html += '<button class="invite-copy-btn" onclick="copyInviteLink(\''+escAttr(g.invite_code)+'\')">📋 复制邀请链接</button>';
+    html += '</div>';
+    // 分享开关
+    html += '<div style="margin-bottom:12px">';
+    html += '<div style="font-size:13px;font-weight:600;color:var(--text-title);margin-bottom:8px">🔒 在此群组分享</div>';
+    html += '<div class="share-row"><div><div class="share-label">体重数据</div><div class="share-desc">允许群友看到体重变化</div></div>';
+    html += '<button class="share-toggle'+(g.share.share_weight?' on':'')+'" id="sw-weight-'+i+'" onclick="toggleShare(\''+escAttr(g.id)+'\',\'share_weight\','+i+')"></button></div>';
+    html += '<div class="share-row"><div><div class="share-label">成就徽章</div><div class="share-desc">允许群友看到你获得的成就</div></div>';
+    html += '<button class="share-toggle'+(g.share.share_achievements?' on':'')+'" id="sw-achieve-'+i+'" onclick="toggleShare(\''+escAttr(g.id)+'\',\'share_achievements\','+i+')"></button></div>';
+    html += '<div class="share-row"><div><div class="share-label">打卡天数</div><div class="share-desc">允许群友看到你的打卡天数</div></div>';
+    html += '<button class="share-toggle'+(g.share.share_checkin?' on':'')+'" id="sw-checkin-'+i+'" onclick="toggleShare(\''+escAttr(g.id)+'\',\'share_checkin\','+i+')"></button></div>';
+    html += '</div>';
+    // 操作按钮
+    html += '<div class="group-card-actions">';
+    if(!own){
+      html += '<button class="group-btn-sm danger" onclick="leaveGroup(\''+escAttr(g.id)+'\',\''+escAttr(g.name)+'\')">退出群组</button>';
+    } else {
+      html += '<button class="group-btn-sm danger" onclick="deleteGroup(\''+escAttr(g.id)+'\',\''+escAttr(g.name)+'\')">解散群组</button>';
+    }
+    html += '</div>';
+    html += '</div>';
+  }
+
+  el.innerHTML = html;
+}
+
+function escHtml(s){return(String(s)||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function escAttr(s){return(String(s)||'').replace(/'/g,"\\'").replace(/"/g,'&quot;');}
+
+window.copyInviteLink = function(code){
+  var link = 'https://www.hotgirlforever.com.cn/?join=' + encodeURIComponent(code);
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(link).then(function(){
+      showToast('邀请链接已复制','success');
+    });
+  } else {
+    // fallback
+    var ta = document.createElement('textarea');
+    ta.value = link;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('邀请链接已复制','success');
+  }
+};
+
+window.createGroup = async function(){
+  if(!currentUser){ showToast('请先登录','info'); return; }
+  var errEl = document.getElementById('create-group-error');
+  var nameEl = document.getElementById('new-group-name');
+  var name = (nameEl&&nameEl.value) ? nameEl.value.trim() : '';
+  if(!name){ if(errEl)errEl.textContent='请输入群组名称'; return; }
+  if(errEl) errEl.textContent = '';
+  // 生成邀请码
+  var code = generateInviteCode();
+  var client = initSupabase();
+  if(!client) return;
+  try{
+    var {data,error} = await client.from('groups').insert({
+      name:name, owner_id:currentUser.id, invite_code:code
+    }).select().single();
+    if(error){
+      if(errEl) errEl.textContent = '创建失败：'+error.message;
+      return;
+    }
+    // 自动加入
+    await client.from('group_members').insert({group_id:data.id,user_id:currentUser.id});
+    if(nameEl) nameEl.value = '';
+    showToast('群组「'+name+'」创建成功！','success');
+    loadMyGroups();
+  }catch(e){
+    if(errEl) errEl.textContent = '创建异常：'+e.message;
+  }
+};
+
+function generateInviteCode(){
+  var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  var code = '';
+  for(var i=0;i<8;i++){code+=chars[Math.floor(Math.random()*chars.length)];}
+  return code;
+}
+
+window.joinByLink = async function(){
+  if(!currentUser){ showToast('请先登录','info'); return; }
+  var input = document.getElementById('join-link-input');
+  var errEl = document.getElementById('join-error');
+  var raw = (input&&input.value) ? input.value.trim() : '';
+  if(!raw){ if(errEl)errEl.textContent='请输入邀请链接或邀请码'; return; }
+  if(errEl) errEl.textContent = '';
+  // 提取邀请码
+  var code = raw;
+  if(raw.indexOf('?join=')!==-1){
+    code = raw.split('?join=')[1].split('&')[0];
+  }
+  code = code.trim().toUpperCase();
+  var client = initSupabase();
+  if(!client) return;
+  try{
+    // 查找群组
+    var {data:groups,error:err1} = await client.from('groups').select('*').eq('invite_code',code).limit(1);
+    if(err1||!groups||groups.length===0){
+      if(errEl) errEl.textContent = '未找到该群组，请检查邀请码';
+      return;
+    }
+    var g = groups[0];
+    // 检查是否已在群组
+    var {data:existing} = await client.from('group_members').select('*').eq('group_id',g.id).eq('user_id',currentUser.id).limit(1);
+    if(existing&&existing.length>0){
+      showToast('你已经在群组「'+g.name+'」中了','info');
+      loadMyGroups();
+      return;
+    }
+    // 加入
+    var {error:err2} = await client.from('group_members').insert({group_id:g.id,user_id:currentUser.id});
+    if(err2){
+      if(errEl) errEl.textContent = '加入失败：'+err2.message;
+      return;
+    }
+    showToast('成功加入群组「'+g.name+'」！','success');
+    if(input) input.value = '';
+    loadMyGroups();
+  }catch(e){
+    if(errEl) errEl.textContent = '加入异常：'+e.message;
+  }
+};
+
+window.leaveGroup = async function(groupId,groupName){
+  if(!confirm('确定要退出群组「'+groupName+'」吗？')) return;
+  if(!currentUser) return;
+  var client = initSupabase();
+  if(!client) return;
+  try{
+    await client.from('group_members').delete().eq('group_id',groupId).eq('user_id',currentUser.id);
+    // 同时删除共享设置
+    await client.from('shared_data').delete().eq('group_id',groupId).eq('user_id',currentUser.id);
+    showToast('已退出群组「'+groupName+'」','info');
+    loadMyGroups();
+  }catch(e){
+    showToast('操作失败：'+e.message,true);
+  }
+};
+
+window.deleteGroup = async function(groupId,groupName){
+  if(!confirm('确定要解散群组「'+groupName+'」吗？所有成员将被移除，此操作不可恢复！')) return;
+  if(!currentUser) return;
+  var client = initSupabase();
+  if(!client) return;
+  try{
+    await client.from('groups').delete().eq('id',groupId);
+    showToast('群组「'+groupName+'」已解散','info');
+    loadMyGroups();
+  }catch(e){
+    showToast('操作失败：'+e.message,true);
+  }
+};
+
+window.toggleShare = async function(groupId,field,idx){
+  if(!currentUser) return;
+  var client = initSupabase();
+  if(!client) return;
+  // 先获取当前值
+  var {data:sd,error} = await client.from('shared_data').select('*').eq('user_id',currentUser.id).eq('group_id',groupId).limit(1);
+  var currentVal = false;
+  var rowId = null;
+  if(sd&&sd.length>0){
+    currentVal = !!sd[0][field];
+    rowId = sd[0].id;
+  }
+  var newVal = !currentVal;
+  try{
+    if(rowId){
+      var updateObj = {};updateObj[field]=newVal;updateObj.updated_at=new Date().toISOString();
+      await client.from('shared_data').update(updateObj).eq('id',rowId);
+    } else {
+      var insertObj = {user_id:currentUser.id,group_id:groupId};insertObj[field]=newVal;
+      await client.from('shared_data').insert(insertObj);
+    }
+    // 更新 UI
+    var toggleId='';
+    if(field==='share_weight') toggleId='sw-weight-'+idx;
+    else if(field==='share_achievements') toggleId='sw-achieve-'+idx;
+    else if(field==='share_checkin') toggleId='sw-checkin-'+idx;
+    var btn = document.getElementById(toggleId);
+    if(btn){
+      if(newVal){btn.classList.add('on');}else{btn.classList.remove('on');}
+    }
+    showToast(newVal?'已开启分享':'已关闭分享','info');
+  }catch(e){
+    showToast('操作失败：'+e.message,true);
+  }
+};
+
 /* ====== Init ====== */
 function init(){
   initSupabase();
   loadData();
-  checkAuth(); // async, non-blocking
+  checkAuth().then(function(user){
+    // 处理邀请链接
+    var params = new URLSearchParams(window.location.search);
+    var joinCode = params.get('join');
+    if(joinCode && user){
+      setTimeout(function(){
+        switchTab('groups');
+        var input = document.getElementById('join-link-input');
+        if(input){ input.value = joinCode; }
+        joinByLink();
+      },800);
+    }
+  });
   var today = new Date();
   var wd = ['日','一','二','三','四','五','六'];
   document.getElementById('header-date').textContent =

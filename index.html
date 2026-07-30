@@ -2676,7 +2676,7 @@ window.handleSignUp = async function(){
       currentUser = data.user;
       updateUserBadge();
       renderAuthArea();
-      showToast('注册成功！请查看邮箱确认（如已开启邮箱验证）','success');
+      showToast('注册成功！','success');
     }
   }catch(e){
     if(errEl) errEl.textContent = '注册异常：'+e.message;

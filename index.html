@@ -1559,8 +1559,11 @@ textarea.form-input{resize:vertical;min-height:40px}
       <button class="modal-close" onclick="closeSettings()">✕</button>
     </div>
     <div class="modal-body">
-      <!-- ===== 基本设置 ===== -->
-      <h3>⚙ 基本设置</h3>
+      <!-- 未登录时：登录/注册卡片出现在顶部 -->
+      <div id="settings-auth-top"></div>
+      <!-- ===== 初始数据 ===== -->
+      <div id="settings-data-section">
+      <h3>📊 初始数据</h3>
       <div class="form-group">
         <label class="form-label">起始体重 (kg)</label>
         <input type="number" class="form-input" id="setting-start-weight" step="0.05" placeholder="如 70.00">
@@ -1582,9 +1585,9 @@ textarea.form-input{resize:vertical;min-height:40px}
         <input type="file" accept=".json" style="display:none" onchange="importData(this.files[0])">
       </label>
       <button class="btn-danger" onclick="clearAllData()">清除所有数据</button>
-      <div class="modal-divider"></div>
-      <!-- ===== 账户 & 云同步 ===== -->
-      <h3>👤 账户 & 云同步</h3>
+      </div>
+      <div class="modal-divider" id="settings-auth-divider" style="display:none"></div>
+      <!-- 已登录时：账户信息出现在底部 -->
       <div id="settings-auth-area"></div>
     </div>
   </div>
@@ -2614,11 +2617,17 @@ function updateUserBadge(){
 }
 
 function renderAuthArea(){
-  var area = document.getElementById('settings-auth-area');
-  if(!area) return;
+  var topEl = document.getElementById('settings-auth-top');
+  var areaEl = document.getElementById('settings-auth-area');
+  var divider = document.getElementById('settings-auth-divider');
+
   if(currentUser){
+    // 已登录：账户信息放底部
+    if(topEl) topEl.innerHTML = '';
+    if(divider) divider.style.display = 'block';
     var initial = (currentUser.email||'U')[0].toUpperCase();
-    area.innerHTML =
+    if(areaEl) areaEl.innerHTML =
+      '<h3 style="margin-bottom:12px">👤 账户 & 云同步</h3>'+
       '<div class="user-info-box">'+
         '<div class="user-icon">'+initial+'</div>'+
         '<div class="user-detail">'+
@@ -2633,24 +2642,33 @@ function renderAuthArea(){
       '</div>'+
       '<div id="cloud-sync-status" style="font-size:12px;color:var(--text-muted);text-align:center;margin-bottom:8px;min-height:18px"></div>'+
       '<button class="btn-logout" onclick="handleLogout()">退出登录</button>';
-  } else if(authMode === 'signup'){
-    area.innerHTML =
-      '<p style="font-size:12px;color:var(--text-muted);margin-bottom:14px">注册后可云同步数据，换设备不丢失。</p>'+
-      '<input class="auth-input" id="auth-email" type="email" placeholder="邮箱地址" autocomplete="email">'+
-      '<input class="auth-input" id="auth-password" type="password" placeholder="密码（至少6位）" autocomplete="new-password">'+
-      '<input class="auth-input" id="auth-password2" type="password" placeholder="确认密码" autocomplete="new-password">'+
-      '<input class="auth-input" id="auth-invite-code" type="text" placeholder="邀请码（向已加入的朋友获取）" autocomplete="off">'+
-      '<div class="auth-error" id="auth-error"></div>'+
-      '<button class="btn-primary" onclick="handleSignUp()" id="auth-submit-btn">注册</button>'+
-      '<div class="auth-toggle" onclick="switchAuthMode(\'login\')">已有账号？<span>去登录</span></div>';
   } else {
-    area.innerHTML =
-      '<p style="font-size:12px;color:var(--text-muted);margin-bottom:14px">登录后可云同步数据，换设备不丢失</p>'+
-      '<input class="auth-input" id="auth-email" type="email" placeholder="邮箱地址" autocomplete="email">'+
-      '<input class="auth-input" id="auth-password" type="password" placeholder="密码" autocomplete="current-password">'+
-      '<div class="auth-error" id="auth-error"></div>'+
-      '<button class="btn-primary" onclick="handleLogin()" id="auth-submit-btn">登录</button>'+
-      '<div class="auth-toggle" onclick="switchAuthMode(\'signup\')">没有账号？<span>去注册</span></div>';
+    // 未登录：登录/注册卡片放顶部
+    if(areaEl) areaEl.innerHTML = '';
+    if(divider) divider.style.display = 'none';
+    if(authMode === 'signup'){
+      if(topEl) topEl.innerHTML =
+        '<h3 style="margin-bottom:12px">👤 注册账号</h3>'+
+        '<p style="font-size:12px;color:var(--text-muted);margin-bottom:14px">注册后可云同步数据，换设备不丢失。</p>'+
+        '<input class="auth-input" id="auth-email" type="email" placeholder="邮箱地址" autocomplete="email">'+
+        '<input class="auth-input" id="auth-password" type="password" placeholder="密码（至少6位）" autocomplete="new-password">'+
+        '<input class="auth-input" id="auth-password2" type="password" placeholder="确认密码" autocomplete="new-password">'+
+        '<input class="auth-input" id="auth-invite-code" type="text" placeholder="邀请码（向已加入的朋友获取）" autocomplete="off">'+
+        '<div class="auth-error" id="auth-error"></div>'+
+        '<button class="btn-primary" onclick="handleSignUp()" id="auth-submit-btn">注册</button>'+
+        '<div class="auth-toggle" onclick="switchAuthMode(\'login\')">已有账号？<span>去登录</span></div>'+
+        '<div class="modal-divider"></div>';
+    } else {
+      if(topEl) topEl.innerHTML =
+        '<h3 style="margin-bottom:12px">👤 登录账号</h3>'+
+        '<p style="font-size:12px;color:var(--text-muted);margin-bottom:14px">登录后可云同步数据，换设备不丢失</p>'+
+        '<input class="auth-input" id="auth-email" type="email" placeholder="邮箱地址" autocomplete="email">'+
+        '<input class="auth-input" id="auth-password" type="password" placeholder="密码" autocomplete="current-password">'+
+        '<div class="auth-error" id="auth-error"></div>'+
+        '<button class="btn-primary" onclick="handleLogin()" id="auth-submit-btn">登录</button>'+
+        '<div class="auth-toggle" onclick="switchAuthMode(\'signup\')">没有账号？<span>去注册</span></div>'+
+        '<div class="modal-divider"></div>';
+    }
   }
 }
 
@@ -3437,7 +3455,7 @@ function init(){
   if(!appData.settings.startWeight && !appData.settings.targetWeight && getAllDates().length===0){
     setTimeout(function(){
       openSettings();
-      showToast('欢迎使用！请先设置基本信息','info');
+      showToast('欢迎使用！请先设置初始数据','info');
     },500);
   }
 }

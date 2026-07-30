@@ -899,7 +899,6 @@ textarea.form-input{resize:vertical;min-height:40px}
   <div class="tab active" data-tab="record" onclick="switchTab('record')">每日记录</div>
   <div class="tab" data-tab="analysis" onclick="switchTab('analysis')">分析建议</div>
   <div class="tab" data-tab="motivation" onclick="switchTab('motivation')">每日动力</div>
-  <div class="tab" data-tab="settings" onclick="switchTab('settings')">设置</div>
 </nav>
 
 <!-- ====== Record Tab ====== -->
@@ -1370,10 +1369,6 @@ function round005(v){
 
 /* ====== UI: Tabs ====== */
 window.switchTab = function(tabName){
-  if(tabName==='settings'){
-    openSettings();
-    return;
-  }
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active')});
   document.querySelectorAll('.tab-content').forEach(function(c){c.classList.remove('active')});
   document.querySelector('.tab[data-tab="'+tabName+'"]').classList.add('active');
@@ -2116,14 +2111,6 @@ window.openSettings = function(){
 };
 window.closeSettings = function(){
   document.getElementById('settings-modal').classList.remove('active');
-  // 恢复之前活跃的 tab 高亮
-  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active')});
-  var prevTab = document.querySelector('.tab-content.active');
-  if(prevTab){
-    var tabName = prevTab.id.replace('tab-','');
-    var tabEl = document.querySelector('.tab[data-tab="'+tabName+'"]');
-    if(tabEl) tabEl.classList.add('active');
-  }
 };
 window.saveSettings = function(){
   appData.settings.startWeight = parseFloat(document.getElementById('setting-start-weight').value)||null;

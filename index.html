@@ -2548,7 +2548,28 @@ window.clearAllData = function(){
 function initSupabase(){
   if(typeof supabase !== 'undefined' && supabase) return supabase;
   try{
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: false,
+        storage: window.localStorage
+      }
+    });
+    // 监听登录态变化
+    supabase.auth.onAuthStateChange(function(event, session){
+      if(event==='SIGNED_IN'||event==='TOKEN_REFRESHED'){
+        if(session&&session.user){
+          currentUser = session.user;
+          updateUserBadge();
+          renderAuthArea();
+        }
+      } else if(event==='SIGNED_OUT'){
+        currentUser = null;
+        updateUserBadge();
+        renderAuthArea();
+      }
+    });
     return supabase;
   }catch(e){
     console.error('Supabase init failed:',e);

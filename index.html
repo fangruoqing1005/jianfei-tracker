@@ -882,6 +882,50 @@ textarea.form-input{resize:vertical;min-height:40px}
 .group-card-actions{
   display:flex;gap:8px;flex-wrap:wrap;
 }
+.group-header-actions{
+  display:flex;align-items:center;gap:8px;
+}
+.group-action-icon{
+  width:28px;height:28px;border-radius:50%;
+  border:1px solid var(--border);background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;cursor:pointer;transition:all .2s;
+  padding:0;
+}
+.group-action-icon:hover{
+  border-color:var(--text-title);background:var(--bg-alt);
+}
+.group-action-icon.danger:hover{
+  border-color:var(--danger);background:#FFF0F0;
+}
+
+.group-section-card{
+  border-radius:var(--radius-xl);
+  border:1px solid var(--border);
+  background:var(--card);
+  padding:14px 16px;
+  margin-bottom:14px;
+}
+.group-section-toggle{
+  display:flex;justify-content:space-between;align-items:center;
+  cursor:pointer;
+  user-select:none;
+}
+.group-section-title{
+  font-size:14px;font-weight:600;color:var(--text-title);
+}
+.group-section-arrow{
+  font-size:12px;color:var(--text-muted);
+  transition:transform .2s;
+}
+.group-section-content{
+  overflow:hidden;
+  transition:max-height .25s ease-out;
+  max-height:500px;
+}
+.group-section-content.collapsed{
+  max-height:0;
+}
 .group-btn-sm{
   padding:7px 16px;
   border:1px solid var(--border);
@@ -1500,20 +1544,26 @@ textarea.form-input{resize:vertical;min-height:40px}
 <section class="tab-content" id="tab-groups">
   <div class="container">
 
-    <!-- 加入群组 -->
-    <div class="join-box" id="join-box" style="display:none">
-      <h4>🔗 通过邀请链接加入群组</h4>
-      <input class="join-link-input" id="join-link-input" type="text" placeholder="粘贴邀请链接或邀请码...">
-      <button class="group-btn-sm primary" onclick="joinByLink()" style="width:100%;padding:12px;font-size:14px">加入群组</button>
-      <div id="join-error" style="font-size:12px;color:var(--danger);text-align:center;margin-top:8px;min-height:18px"></div>
-    </div>
-
-    <!-- 创建群组 -->
-    <div class="group-form-card" id="create-group-card">
-      <h4>✨ 创建新群组</h4>
-      <input class="join-link-input" id="new-group-name" type="text" placeholder="输入群组名称，如：闺蜜减肥圈">
-      <button class="group-btn-sm primary" onclick="createGroup()" style="width:100%;padding:12px;font-size:14px">创建</button>
-      <div id="create-group-error" style="font-size:12px;color:var(--danger);text-align:center;margin-top:8px;min-height:18px"></div>
+    <!-- 加入/创建群组（可折叠） -->
+    <div class="card group-section-card" id="group-manage-section">
+      <div class="group-section-toggle" onclick="toggleGroupSection('group-manage-content')">
+        <span class="group-section-title">➕ 加入 / 创建群组</span>
+        <span class="group-section-arrow" id="group-manage-content-arrow">▸</span>
+      </div>
+      <div class="group-section-content collapsed" id="group-manage-content">
+        <div class="join-box">
+          <h4>🔗 通过邀请链接加入群组</h4>
+          <input class="join-link-input" id="join-link-input" type="text" placeholder="粘贴邀请链接或邀请码...">
+          <button class="group-btn-sm primary" onclick="joinByLink()" style="width:100%;padding:12px;font-size:14px">加入群组</button>
+          <div id="join-error" style="font-size:12px;color:var(--danger);text-align:center;margin-top:8px;min-height:18px"></div>
+        </div>
+        <div class="group-form-card" style="margin-bottom:0">
+          <h4>✨ 创建新群组</h4>
+          <input class="join-link-input" id="new-group-name" type="text" placeholder="输入群组名称，如：闺蜜减肥圈">
+          <button class="group-btn-sm primary" onclick="createGroup()" style="width:100%;padding:12px;font-size:14px">创建</button>
+          <div id="create-group-error" style="font-size:12px;color:var(--danger);text-align:center;margin-top:8px;min-height:18px"></div>
+        </div>
+      </div>
     </div>
 
     <!-- 群组列表 -->
@@ -2964,12 +3014,10 @@ window.loadMyGroups = async function(){
   leaderboardCache = {}; // 清除排行榜缓存
   if(!currentUser){
     document.getElementById('group-list').innerHTML = '<div class="empty-state"><div class="empty-icon">🔒</div><div class="empty-text">请先登录后使用群组功能</div></div>';
-    document.getElementById('create-group-card').style.display = 'none';
-    document.getElementById('join-box').style.display = 'none';
+    document.getElementById('group-manage-section').style.display = 'none';
     return;
   }
-  document.getElementById('create-group-card').style.display = 'block';
-  document.getElementById('join-box').style.display = 'block';
+  document.getElementById('group-manage-section').style.display = 'block';
   // 显示加载中
   document.getElementById('group-list').innerHTML = '<div class="empty-state"><div class="empty-text">加载中...</div></div>';
   var client = initSupabase();
@@ -3049,9 +3097,17 @@ function renderGroupList(groups){
     var own = isOwner(g);
     var link = 'https://www.hotgirlforever.com.cn/?join=' + encodeURIComponent(g.invite_code);
     html += '<div class="card group-card">';
+    // 头部：名称 + 状态/操作
     html += '<div class="group-card-header">';
     html += '<div class="group-card-name">'+escHtml(g.name)+'</div>';
+    html += '<div class="group-header-actions">';
     html += '<div class="group-card-owner-badge">'+(own?'我创建的':'成员')+'</div>';
+    if(!own){
+      html += '<button class="group-action-icon" title="退出群组" onclick="leaveGroup(\''+escAttr(g.id)+'\',\''+escAttr(g.name)+'\')">🚪</button>';
+    } else {
+      html += '<button class="group-action-icon danger" title="解散群组" onclick="deleteGroup(\''+escAttr(g.id)+'\',\''+escAttr(g.name)+'\')">🗑️</button>';
+    }
+    html += '</div>';
     html += '</div>';
     html += '<div class="group-card-meta"><span>👥 '+g.memberCount+' 人</span><span>🔑 '+escHtml(g.invite_code)+'</span></div>';
     // 邀请链接
@@ -3060,15 +3116,20 @@ function renderGroupList(groups){
     html += '<div class="invite-link">'+escHtml(link)+'</div>';
     html += '<button class="invite-copy-btn" onclick="copyInviteLink(\''+escAttr(g.invite_code)+'\')">📋 复制邀请链接</button>';
     html += '</div>';
-    // 分享开关
-    html += '<div style="margin-bottom:12px">';
-    html += '<div style="font-size:13px;font-weight:600;color:var(--text-title);margin-bottom:8px">🔒 在此群组分享</div>';
+    // 分享开关（可折叠）
+    html += '<div class="group-section-card" style="margin-bottom:12px;padding:0;background:transparent;border:none">';
+    html += '<div class="group-section-toggle" onclick="toggleGroupSection(\'share-content-'+i+'\')">';
+    html += '<span class="group-section-title" style="font-size:13px">🔒 在此群组分享</span>';
+    html += '<span class="group-section-arrow" id="share-content-'+i+'-arrow">▸</span>';
+    html += '</div>';
+    html += '<div class="group-section-content collapsed" id="share-content-'+i+'">';
     html += '<div class="share-row"><div><div class="share-label">体重数据</div><div class="share-desc">允许群友看到体重变化</div></div>';
     html += '<button class="share-toggle'+(g.share.share_weight?' on':'')+'" id="sw-weight-'+i+'" onclick="toggleShare(\''+escAttr(g.id)+'\',\'share_weight\','+i+')"></button></div>';
     html += '<div class="share-row"><div><div class="share-label">成就徽章</div><div class="share-desc">允许群友看到你获得的成就</div></div>';
     html += '<button class="share-toggle'+(g.share.share_achievements?' on':'')+'" id="sw-achieve-'+i+'" onclick="toggleShare(\''+escAttr(g.id)+'\',\'share_achievements\','+i+')"></button></div>';
     html += '<div class="share-row"><div><div class="share-label">打卡天数</div><div class="share-desc">允许群友看到你的打卡天数</div></div>';
     html += '<button class="share-toggle'+(g.share.share_checkin?' on':'')+'" id="sw-checkin-'+i+'" onclick="toggleShare(\''+escAttr(g.id)+'\',\'share_checkin\','+i+')"></button></div>';
+    html += '</div>';
     html += '</div>';
     // 排行榜按钮
     html += '<button class="rank-expand-btn" id="rank-btn-'+i+'" onclick="toggleLeaderboard(\''+escAttr(g.id)+'\','+i+')">🏆 查看排行榜 <span class="arrow">▾</span></button>';
@@ -3079,14 +3140,6 @@ function renderGroupList(groups){
     html += '<button class="rank-tab" onclick="switchRankTab(\''+escAttr(g.id)+'\','+i+',\'daily\')">今日减重</button>';
     html += '</div>';
     html += '<div class="rank-list" id="rank-list-'+i+'"></div>';
-    html += '</div>';
-    // 操作按钮
-    html += '<div class="group-card-actions">';
-    if(!own){
-      html += '<button class="group-btn-sm danger" onclick="leaveGroup(\''+escAttr(g.id)+'\',\''+escAttr(g.name)+'\')">退出群组</button>';
-    } else {
-      html += '<button class="group-btn-sm danger" onclick="deleteGroup(\''+escAttr(g.id)+'\',\''+escAttr(g.name)+'\')">解散群组</button>';
-    }
     html += '</div>';
     html += '</div>';
   }
@@ -3272,6 +3325,20 @@ window.toggleShare = async function(groupId,field,idx){
     showToast(newVal?'已开启分享':'已关闭分享','info');
   }catch(e){
     showToast('操作失败：'+e.message,true);
+  }
+};
+
+// 折叠/展开群组页面中的区域
+window.toggleGroupSection = function(contentId){
+  var content = document.getElementById(contentId);
+  var arrow = document.getElementById(contentId+'-arrow');
+  if(!content) return;
+  if(content.classList.contains('collapsed')){
+    content.classList.remove('collapsed');
+    if(arrow) arrow.textContent = '▾';
+  } else {
+    content.classList.add('collapsed');
+    if(arrow) arrow.textContent = '▸';
   }
 };
 

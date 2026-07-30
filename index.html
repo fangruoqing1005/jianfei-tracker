@@ -533,6 +533,76 @@ textarea.form-input{resize:vertical;min-height:40px}
   background:rgba(255,255,255,.7);
   color:var(--text);
 }
+
+/* ====== AI 减脂教练 ====== */
+.ai-coach-card{background:linear-gradient(135deg,#f0e6ff,#e6f0ff);border-color:#d4c4f0}
+.ai-style-badge{
+  display:inline-block;font-size:11px;font-weight:600;
+  padding:2px 10px;border-radius:99px;
+  background:rgba(255,255,255,.7);color:var(--primary);
+  margin-left:8px;cursor:pointer;transition:all .2s;
+}
+.ai-style-badge:hover{background:rgba(255,255,255,.95)}
+.ai-coach-loading{
+  display:flex;align-items:center;justify-content:center;
+  padding:24px 0;
+}
+.ai-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--primary);margin:0 3px;
+  animation:aiBounce 1.2s infinite;
+}
+.ai-dot:nth-child(2){animation-delay:.2s}
+.ai-dot:nth-child(3){animation-delay:.4s}
+@keyframes aiBounce{
+  0%,60%,100%{transform:translateY(0)}
+  30%{transform:translateY(-8px)}
+}
+.ai-headline{
+  font-size:18px;font-weight:700;color:var(--text-title);
+  margin-bottom:10px;display:flex;align-items:center;gap:6px;
+}
+.ai-mood{font-size:24px}
+.ai-body{
+  font-size:14px;line-height:1.7;color:var(--text);
+  margin-bottom:16px;
+}
+.ai-tips{margin-top:12px}
+.ai-tip-item{
+  display:flex;align-items:flex-start;gap:8px;
+  padding:8px 12px;margin-bottom:8px;
+  border-radius:var(--radius-md);background:rgba(255,255,255,.7);
+  font-size:14px;line-height:1.5;
+}
+.ai-tip-num{
+  flex-shrink:0;width:22px;height:22px;
+  border-radius:50%;background:var(--primary);
+  color:#fff;font-size:12px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+}
+.ai-coach-actions{
+  margin-top:14px;text-align:center;
+}
+.ai-refresh-btn{
+  padding:6px 16px;border-radius:99px;
+  border:1px solid var(--primary);background:transparent;
+  color:var(--primary);font-size:12px;cursor:pointer;
+  transition:all .2s;
+}
+.ai-refresh-btn:hover{background:var(--primary);color:#fff}
+.ai-refresh-btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* 风格选择器 */
+.style-selector{display:flex;flex-wrap:wrap;gap:8px}
+.style-option{
+  padding:6px 14px;border-radius:99px;
+  border:1px solid var(--border);background:var(--bg);
+  font-size:13px;cursor:pointer;transition:all .2s;
+}
+.style-option:hover{border-color:var(--primary)}
+.style-option.active{
+  background:var(--primary);color:#fff;border-color:var(--primary);
+}
 .suggestion-item{
   padding:10px 16px;
   background:rgba(255,255,255,.7);
@@ -1444,9 +1514,19 @@ textarea.form-input{resize:vertical;min-height:40px}
       </div>
     </div>
 
-    <div class="card">
-      <div class="card-title"><span class="emoji">📋</span>日频分析</div>
-      <div id="daily-analysis"></div>
+    <div class="card ai-coach-card" id="ai-coach-card">
+      <div class="card-title">
+        <span class="emoji">🤖</span>AI 减脂教练
+        <span class="ai-style-badge" id="ai-style-badge" title="点击设置切换风格" onclick="openSettings();event.stopPropagation()">🌸 温柔</span>
+      </div>
+      <div class="ai-coach-loading" id="ai-coach-loading" style="display:none">
+        <span class="ai-dot"></span><span class="ai-dot"></span><span class="ai-dot"></span>
+        <span style="color:var(--text-muted);font-size:13px;margin-left:8px">正在生成分析...</span>
+      </div>
+      <div id="ai-coach-content"></div>
+      <div class="ai-coach-actions">
+        <button class="ai-refresh-btn" id="ai-refresh-btn" onclick="refreshAIAnalysis()" title="重新生成">🔄 刷新分析</button>
+      </div>
     </div>
 
     <div class="card">
@@ -1454,11 +1534,6 @@ textarea.form-input{resize:vertical;min-height:40px}
       <div class="chart-container" id="weight-chart-container">
         <canvas id="weight-chart"></canvas>
       </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title"><span class="emoji">📅</span>周频分析</div>
-      <div id="weekly-analysis"></div>
     </div>
 
     <div class="card">
@@ -1613,6 +1688,15 @@ textarea.form-input{resize:vertical;min-height:40px}
         <div class="form-group">
           <label class="form-label">昵称</label>
           <input type="text" class="form-input" id="setting-nickname" placeholder="给自己起个昵称，让小伙伴认识你" maxlength="20">
+        </div>
+        <div class="form-group">
+          <label class="form-label">AI 教练风格</label>
+          <div class="style-selector" id="style-selector">
+            <button class="style-option" data-style="gentle" onclick="selectStyle('gentle')">🌸 温柔</button>
+            <button class="style-option" data-style="cheer" onclick="selectStyle('cheer')">💪 鼓励</button>
+            <button class="style-option" data-style="firm" onclick="selectStyle('firm')">😤 严厉</button>
+            <button class="style-option" data-style="pro" onclick="selectStyle('pro')">📊 专业</button>
+          </div>
         </div>
         <button class="btn-primary" onclick="saveNickname()" style="margin-bottom:12px">保存昵称</button>
         <div class="modal-divider"></div>
@@ -1807,7 +1891,7 @@ window.switchTab = function(tabName){
   document.getElementById('tab-'+tabName).classList.add('active');
   if(tabName==='analysis'){
     renderAnalysis();
-    setTimeout(function(){renderWeightChart();renderWeeklyChart()},100);
+    setTimeout(function(){renderWeightChart()},100);
   }
   if(tabName==='motivation'){
     renderMotivation();
@@ -2402,10 +2486,206 @@ function renderMonthlySummary(){
 /* ====== Render Analysis (all) ====== */
 function renderAnalysis(){
   renderComparison(currentDate);
-  renderDailyAnalysis(currentDate);
-  renderWeeklyAnalysis();
+  renderAIAnalysis(currentDate);
   renderMonthlySummary();
 }
+
+/* ====== AI 减脂教练 ====== */
+window.currentAnalysisStyle = 'gentle';
+var aiAnalysisCache = null;
+var aiLastDate = null;
+
+window.renderAIAnalysis = async function(dateStr){
+  var el = document.getElementById('ai-coach-content');
+  var loadingEl = document.getElementById('ai-coach-loading');
+  var btn = document.getElementById('ai-refresh-btn');
+  var badge = document.getElementById('ai-style-badge');
+
+  // 更新风格徽章
+  var styleNames = {gentle:'🌸 温柔',cheer:'💪 鼓励',firm:'😤 严厉',pro:'📊 专业'};
+  badge.textContent = styleNames[currentAnalysisStyle] || '🌸 温柔';
+
+  // 检查是否有今日数据
+  var rec = getRecord(dateStr);
+  if(!rec||!rec.weight){
+    el.innerHTML = '<div style="color:var(--text-muted);text-align:center;padding:24px">今天还没有记录体重哦，先打卡吧</div>';
+    return;
+  }
+
+  // 缓存：同一天同风格不重复请求
+  if(aiAnalysisCache && aiLastDate===dateStr && aiAnalysisCache._style===currentAnalysisStyle){
+    renderAIContent(aiAnalysisCache);
+    return;
+  }
+
+  // 显示加载动画
+  loadingEl.style.display = 'flex';
+  el.innerHTML = '';
+  if(btn) btn.disabled = true;
+
+  try{
+    var result = await callAIAnalysis(dateStr);
+    if(result){
+      result._style = currentAnalysisStyle;
+      aiAnalysisCache = result;
+      aiLastDate = dateStr;
+      renderAIContent(result);
+    }
+  }catch(e){
+    console.error('AI analysis failed:',e);
+    // 回退到规则引擎
+    renderAIContent(fallbackAnalysis(dateStr));
+  }finally{
+    loadingEl.style.display = 'none';
+    if(btn) btn.disabled = false;
+  }
+};
+
+async function callAIAnalysis(dateStr){
+  var client = initSupabase();
+  if(!client) throw new Error('No client');
+
+  // 收集用户档案
+  var startW = appData.settings.startWeight||null;
+  var targetW = appData.settings.targetWeight||null;
+  var height = appData.settings.height||null;
+
+  // 收集近7天记录
+  var dates = getAllDates().sort();
+  var records = [];
+  var sevenDays = [];
+  var d = new Date(dateStr);
+  for(var i=6;i>=0;i--){
+    var dd = new Date(d);
+    dd.setDate(d.getDate()-i);
+    var ds = dd.getFullYear()+'-'+pad(dd.getMonth()+1)+'-'+pad(dd.getDate());
+    sevenDays.push(ds);
+  }
+  for(var i=0;i<sevenDays.length;i++){
+    var r = getRecord(sevenDays[i]);
+    if(r){
+      records.push({date:sevenDays[i],weight:r.weight,data:r});
+    } else {
+      records.push({date:sevenDays[i],weight:null,data:{}});
+    }
+  }
+
+  // 本周平均体重
+  var weeklyAvg = null;
+  var weeklyData = getWeeklyAverages();
+  if(weeklyData.length>0){
+    weeklyAvg = weeklyData[weeklyData.length-1].average;
+  }
+
+  // 调用 Edge Function
+  var session = await client.auth.getSession();
+  var token = session.data.session ? session.data.session.access_token : SUPABASE_KEY;
+
+  var resp = await fetch(SUPABASE_URL+'/functions/v1/analyze-daily',{
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'Authorization':'Bearer '+token,
+      'apikey':SUPABASE_KEY
+    },
+    body:JSON.stringify({
+      dateStr:dateStr,
+      profile:{startWeight:startW,targetWeight:targetW,height:height},
+      records:records,
+      weeklyAvg:weeklyAvg,
+      style:currentAnalysisStyle
+    })
+  });
+  var json = await resp.json();
+  if(!json.success) throw new Error(json.error||'Unknown error');
+  return json.data;
+}
+
+function fallbackAnalysis(dateStr){
+  var a = analyzeDaily(dateStr);
+  if(!a) return {headline:'今天还没有记录',body:'请先记录体重数据',tips:[],mood:'📝'};
+  var headlines = {
+    gain:'体重略有上升，别太担心哦',
+    loss:'体重下降啦，继续加油',
+    stable:'体重保持稳定，状态不错',
+    first:'开始记录啦，好的开始是成功的一半'
+  };
+  return {
+    headline:headlines[a.type]||a.message,
+    body:a.message+(a.causes.length>0?('。可能原因：'+a.causes.join('；')):''),
+    tips:a.suggestions.slice(0,3),
+    mood:a.type==='loss'?'🎉':(a.type==='gain'?'😌':'💪')
+  };
+}
+
+function renderAIContent(data){
+  var el = document.getElementById('ai-coach-content');
+  var html = '';
+  html += '<div class="ai-headline"><span class="ai-mood">'+escHtml(data.mood||'🤖')+'</span>'+escHtml(data.headline||'')+'</div>';
+  if(data.body){
+    html += '<div class="ai-body">'+escHtml(data.body)+'</div>';
+  }
+  if(data.tips&&data.tips.length){
+    html += '<div class="ai-tips">';
+    for(var i=0;i<data.tips.length;i++){
+      html += '<div class="ai-tip-item"><span class="ai-tip-num">'+(i+1)+'</span>'+escHtml(data.tips[i])+'</div>';
+    }
+    html += '</div>';
+  }
+  el.innerHTML = html;
+}
+
+window.refreshAIAnalysis = function(){
+  aiAnalysisCache = null;
+  renderAIAnalysis(currentDate);
+};
+
+window.selectStyle = function(style){
+  currentAnalysisStyle = style;
+  // 更新UI选中状态
+  var options = document.querySelectorAll('.style-option');
+  for(var i=0;i<options.length;i++){
+    options[i].classList.toggle('active',options[i].dataset.style===style);
+  }
+  // 保存到数据库
+  saveAnalysisStyle(style);
+  // 更新分析徽章
+  var badge = document.getElementById('ai-style-badge');
+  var styleNames = {gentle:'🌸 温柔',cheer:'💪 鼓励',firm:'😤 严厉',pro:'📊 专业'};
+  if(badge) badge.textContent = styleNames[style]||'🌸 温柔';
+  // 清除缓存，下次切到分析页刷新
+  aiAnalysisCache = null;
+};
+
+async function saveAnalysisStyle(style){
+  if(!currentUser) return;
+  var client = initSupabase();
+  if(!client) return;
+  try{
+    await client.from('profiles').upsert({user_id:currentUser.id,analysis_style:style,updated_at:new Date().toISOString()});
+  }catch(e){/* ignore */}
+}
+
+// 在 loadProfileNickname 中也加载风格偏好
+var _origLoadProfileNickname = loadProfileNickname;
+loadProfileNickname = async function(){
+  await _origLoadProfileNickname();
+  // 加载风格偏好
+  if(!currentUser) return;
+  var client = initSupabase();
+  if(!client) return;
+  try{
+    var {data} = await client.from('profiles').select('analysis_style').eq('user_id',currentUser.id).limit(1);
+    if(data&&data.length>0&&data[0].analysis_style){
+      currentAnalysisStyle = data[0].analysis_style;
+      // 同步设置页按钮状态
+      var options = document.querySelectorAll('.style-option');
+      for(var i=0;i<options.length;i++){
+        options[i].classList.toggle('active',options[i].dataset.style===currentAnalysisStyle);
+      }
+    }
+  }catch(e){/* ignore */}
+};
 
 /* ====== Motivation ====== */
 window.nextMotivationPhoto = function(){
@@ -2546,6 +2826,11 @@ window.openSettings = function(){
   if(currentUser){
     document.getElementById('profile-section').style.display = 'block';
     loadProfileNickname();
+    // 同步风格选择器
+    var options = document.querySelectorAll('.style-option');
+    for(var i=0;i<options.length;i++){
+      options[i].classList.toggle('active',options[i].dataset.style===currentAnalysisStyle);
+    }
   } else {
     document.getElementById('profile-section').style.display = 'none';
   }

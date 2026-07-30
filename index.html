@@ -102,6 +102,21 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
   display:flex;align-items:center;justify-content:center;
 }
 .settings-btn:hover{background:var(--card-blue);color:var(--text-on-blue);border-color:var(--card-blue)}
+.user-badge{
+  font-size:12px;font-weight:500;
+  color:var(--text-muted);
+  background:var(--bg-alt);
+  border:1px solid var(--border);
+  border-radius:var(--radius-md);
+  padding:6px 12px;
+  cursor:pointer;
+  transition:all .2s;
+  white-space:nowrap;
+  max-width:130px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.user-badge.logged-in{color:var(--text-on-blue);background:var(--card-blue);border-color:var(--card-blue)}
 .header-date{font-size:13px;color:var(--text-muted);margin-top:5px}
 .quick-stats{display:flex;gap:8px;margin-top:16px}
 .stat-item{
@@ -792,6 +807,54 @@ textarea.form-input{resize:vertical;min-height:40px}
 }
 .btn-danger:hover{background:var(--danger);color:#fff}
 
+/* ====== Auth Forms ====== */
+.auth-section{margin-top:18px}
+.auth-input{
+  width:100%;padding:12px 14px;
+  border:1px solid var(--border);
+  border-radius:var(--radius-md);
+  font-size:14px;color:var(--text);
+  background:var(--bg);
+  transition:border-color .2s;
+  margin-bottom:10px;
+  font-family:inherit;
+}
+.auth-input:focus{border-color:var(--text-muted);outline:none}
+.auth-toggle{
+  font-size:12px;color:var(--text-muted);
+  text-align:center;margin-top:6px;cursor:pointer;
+}
+.auth-toggle span{color:var(--text-title);text-decoration:underline}
+.auth-error{
+  font-size:12px;color:var(--danger);text-align:center;
+  margin-bottom:10px;min-height:18px;
+}
+.user-info-box{
+  display:flex;align-items:center;gap:10px;
+  background:var(--bg-alt);
+  border-radius:var(--radius-md);
+  padding:12px 14px;margin-bottom:14px;
+}
+.user-info-box .user-icon{
+  width:36px;height:36px;border-radius:50%;
+  background:var(--card-blue);color:var(--text-on-blue);
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;font-weight:600;flex-shrink:0;
+}
+.user-info-box .user-detail{flex:1;min-width:0}
+.user-info-box .user-email{font-size:13px;font-weight:500;color:var(--text-title);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.user-info-box .user-since{font-size:11px;color:var(--text-muted)}
+.btn-logout{
+  display:block;width:100%;padding:12px;
+  border:1px solid var(--border);
+  border-radius:var(--radius-md);
+  background:var(--card);color:var(--text-muted);
+  font-size:14px;cursor:pointer;
+  transition:all .2s;
+  text-align:center;font-family:inherit;
+}
+.btn-logout:hover{border-color:var(--danger);color:var(--danger)}
+
 /* ====== Date Picker ====== */
 .date-picker-modal .modal-content{max-width:340px;padding:22px}
 .dp-header{
@@ -887,7 +950,10 @@ textarea.form-input{resize:vertical;min-height:40px}
   <div class="header-inner">
     <div class="header-top">
       <h1>减脂管理工作台</h1>
-      <button class="settings-btn" onclick="openSettings()">⚙</button>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="user-badge" id="user-badge" onclick="openSettings()" title="点击设置账户">未登录</div>
+        <button class="settings-btn" onclick="openSettings()">⚙</button>
+      </div>
     </div>
     <div class="header-date" id="header-date"></div>
     <div class="quick-stats" id="quick-stats"></div>
@@ -1183,6 +1249,8 @@ textarea.form-input{resize:vertical;min-height:40px}
       <button class="modal-close" onclick="closeSettings()">✕</button>
     </div>
     <div class="modal-body">
+      <!-- ===== 基本设置 ===== -->
+      <h3>⚙ 基本设置</h3>
       <div class="form-group">
         <label class="form-label">起始体重 (kg)</label>
         <input type="number" class="form-input" id="setting-start-weight" step="0.05" placeholder="如 70.00">
@@ -1197,7 +1265,7 @@ textarea.form-input{resize:vertical;min-height:40px}
       </div>
       <button class="btn-primary" onclick="saveSettings()">保存设置</button>
       <div class="modal-divider"></div>
-      <h3>数据管理</h3>
+      <h3>📦 数据管理</h3>
       <button class="btn-secondary" onclick="exportData()">导出数据</button>
       <label class="btn-secondary" style="cursor:pointer">
         导入数据
@@ -1205,14 +1273,9 @@ textarea.form-input{resize:vertical;min-height:40px}
       </label>
       <button class="btn-danger" onclick="clearAllData()">清除所有数据</button>
       <div class="modal-divider"></div>
-      <h3>☁ 云同步 (Supabase)</h3>
-      <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px">上传后数据安全存储在云端，换设备也能恢复。首次使用请先在 Supabase 中执行建表 SQL。</p>
-      <div style="display:flex;gap:8px;margin-bottom:8px">
-        <button class="btn-secondary" onclick="cloudUpload()" id="cloud-upload-btn" style="margin-bottom:0">⬆ 上传到云端</button>
-        <button class="btn-secondary" onclick="cloudDownload()" id="cloud-download-btn" style="margin-bottom:0">⬇ 从云端下载</button>
-      </div>
-      <div id="cloud-sync-status" style="font-size:12px;color:var(--text-muted);text-align:center;margin-bottom:8px;min-height:18px"></div>
-      <p style="font-size:11px;color:var(--text-muted);line-height:1.5">首次使用说明：<br>1. 打开 <a href="https://supabase.com/dashboard/project/bdtueuwyatnozybbbucd/sql/new" target="_blank" style="color:var(--text-title)">Supabase SQL Editor</a><br>2. 粘贴建表 SQL 并执行<br>3. 回到本页点击"上传到云端"即可</p>
+      <!-- ===== 账户 & 云同步 ===== -->
+      <h3>👤 账户 & 云同步</h3>
+      <div id="settings-auth-area"></div>
     </div>
   </div>
 </div>
@@ -2107,6 +2170,7 @@ window.openSettings = function(){
   document.getElementById('setting-start-weight').value = appData.settings.startWeight||'';
   document.getElementById('setting-target-weight').value = appData.settings.targetWeight||'';
   document.getElementById('setting-height').value = appData.settings.height||'';
+  renderAuthArea();
   document.getElementById('settings-modal').classList.add('active');
 };
 window.closeSettings = function(){
@@ -2179,6 +2243,166 @@ function initSupabase(){
   }
 }
 
+/* ====== Auth ====== */
+var currentUser = null;
+var authMode = 'login'; // 'login' or 'signup'
+
+window.checkAuth = async function(){
+  var client = initSupabase();
+  if(!client) return;
+  try{
+    var {data:{session}} = await client.auth.getSession();
+    if(session && session.user){
+      currentUser = session.user;
+    }
+    updateUserBadge();
+    renderAuthArea();
+    return currentUser;
+  }catch(e){
+    console.error('Auth check failed:',e);
+    return null;
+  }
+};
+
+function updateUserBadge(){
+  var badge = document.getElementById('user-badge');
+  if(!badge) return;
+  if(currentUser){
+    var email = currentUser.email || '';
+    badge.textContent = email.length > 15 ? email.substring(0,13)+'...' : email;
+    badge.classList.add('logged-in');
+    badge.title = '已登录: '+email;
+  } else {
+    badge.textContent = '未登录';
+    badge.classList.remove('logged-in');
+    badge.title = '点击设置账户';
+  }
+}
+
+function renderAuthArea(){
+  var area = document.getElementById('settings-auth-area');
+  if(!area) return;
+  if(currentUser){
+    var initial = (currentUser.email||'U')[0].toUpperCase();
+    area.innerHTML =
+      '<div class="user-info-box">'+
+        '<div class="user-icon">'+initial+'</div>'+
+        '<div class="user-detail">'+
+          '<div class="user-email">'+(currentUser.email||'')+'</div>'+
+          '<div class="user-since">已登录</div>'+
+        '</div>'+
+      '</div>'+
+      '<p style="font-size:12px;color:var(--text-muted);margin-bottom:12px">登录后数据安全存储在云端，换设备也能恢复。</p>'+
+      '<div style="display:flex;gap:8px;margin-bottom:8px">'+
+        '<button class="btn-secondary" onclick="cloudUpload()" id="cloud-upload-btn" style="margin-bottom:0">⬆ 上传到云端</button>'+
+        '<button class="btn-secondary" onclick="cloudDownload()" id="cloud-download-btn" style="margin-bottom:0">⬇ 从云端下载</button>'+
+      '</div>'+
+      '<div id="cloud-sync-status" style="font-size:12px;color:var(--text-muted);text-align:center;margin-bottom:8px;min-height:18px"></div>'+
+      '<button class="btn-logout" onclick="handleLogout()">退出登录</button>';
+  } else if(authMode === 'signup'){
+    area.innerHTML =
+      '<p style="font-size:12px;color:var(--text-muted);margin-bottom:14px">注册后可云同步数据，换设备不丢失。请使用真实邮箱。</p>'+
+      '<input class="auth-input" id="auth-email" type="email" placeholder="邮箱地址" autocomplete="email">'+
+      '<input class="auth-input" id="auth-password" type="password" placeholder="密码（至少6位）" autocomplete="new-password">'+
+      '<input class="auth-input" id="auth-password2" type="password" placeholder="确认密码" autocomplete="new-password">'+
+      '<div class="auth-error" id="auth-error"></div>'+
+      '<button class="btn-primary" onclick="handleSignUp()" id="auth-submit-btn">注册</button>'+
+      '<div class="auth-toggle" onclick="switchAuthMode(\'login\')">已有账号？<span>去登录</span></div>';
+  } else {
+    area.innerHTML =
+      '<p style="font-size:12px;color:var(--text-muted);margin-bottom:14px">登录后可云同步数据，换设备不丢失</p>'+
+      '<input class="auth-input" id="auth-email" type="email" placeholder="邮箱地址" autocomplete="email">'+
+      '<input class="auth-input" id="auth-password" type="password" placeholder="密码" autocomplete="current-password">'+
+      '<div class="auth-error" id="auth-error"></div>'+
+      '<button class="btn-primary" onclick="handleLogin()" id="auth-submit-btn">登录</button>'+
+      '<div class="auth-toggle" onclick="switchAuthMode(\'signup\')">没有账号？<span>去注册</span></div>';
+  }
+}
+
+window.switchAuthMode = function(mode){
+  authMode = mode;
+  renderAuthArea();
+};
+
+window.handleSignUp = async function(){
+  var emailEl = document.getElementById('auth-email');
+  var pwEl = document.getElementById('auth-password');
+  var pw2El = document.getElementById('auth-password2');
+  var errEl = document.getElementById('auth-error');
+  var btn = document.getElementById('auth-submit-btn');
+  var email = (emailEl&&emailEl.value) ? emailEl.value.trim() : '';
+  var pw = pwEl ? pwEl.value : '';
+  var pw2 = pw2El ? pw2El.value : '';
+  if(!email){ if(errEl) errEl.textContent = '请输入邮箱地址'; return; }
+  if(!pw || pw.length < 6){ if(errEl) errEl.textContent = '密码至少6位'; return; }
+  if(pw !== pw2){ if(errEl) errEl.textContent = '两次密码不一致'; return; }
+  if(btn){ btn.disabled = true; btn.textContent = '注册中...'; }
+  if(errEl) errEl.textContent = '';
+  var client = initSupabase();
+  if(!client){ if(errEl) errEl.textContent = '初始化失败，请刷新重试'; if(btn){btn.disabled=false;btn.textContent='注册';} return; }
+  try{
+    var {data,error} = await client.auth.signUp({email:email,password:pw});
+    if(error){
+      if(errEl) errEl.textContent = error.message;
+      if(btn){ btn.disabled = false; btn.textContent = '注册'; }
+      return;
+    }
+    if(data.user){
+      currentUser = data.user;
+      updateUserBadge();
+      renderAuthArea();
+      showToast('注册成功！请查看邮箱确认（如已开启邮箱验证）','success');
+    }
+  }catch(e){
+    if(errEl) errEl.textContent = '注册异常：'+e.message;
+    if(btn){ btn.disabled = false; btn.textContent = '注册'; }
+  }
+};
+
+window.handleLogin = async function(){
+  var emailEl = document.getElementById('auth-email');
+  var pwEl = document.getElementById('auth-password');
+  var errEl = document.getElementById('auth-error');
+  var btn = document.getElementById('auth-submit-btn');
+  var email = (emailEl&&emailEl.value) ? emailEl.value.trim() : '';
+  var pw = pwEl ? pwEl.value : '';
+  if(!email){ if(errEl) errEl.textContent = '请输入邮箱地址'; return; }
+  if(!pw){ if(errEl) errEl.textContent = '请输入密码'; return; }
+  if(btn){ btn.disabled = true; btn.textContent = '登录中...'; }
+  if(errEl) errEl.textContent = '';
+  var client = initSupabase();
+  if(!client){ if(errEl) errEl.textContent = '初始化失败，请刷新重试'; if(btn){btn.disabled=false;btn.textContent='登录';} return; }
+  try{
+    var {data,error} = await client.auth.signInWithPassword({email:email,password:pw});
+    if(error){
+      if(errEl) errEl.textContent = error.message;
+      if(btn){ btn.disabled = false; btn.textContent = '登录'; }
+      return;
+    }
+    if(data.user){
+      currentUser = data.user;
+      updateUserBadge();
+      renderAuthArea();
+      showToast('登录成功','success');
+    }
+  }catch(e){
+    if(errEl) errEl.textContent = '登录异常：'+e.message;
+    if(btn){ btn.disabled = false; btn.textContent = '登录'; }
+  }
+};
+
+window.handleLogout = async function(){
+  if(!confirm('确定要退出登录吗？')) return;
+  var client = initSupabase();
+  if(client){
+    await client.auth.signOut();
+  }
+  currentUser = null;
+  updateUserBadge();
+  renderAuthArea();
+  showToast('已退出登录','info');
+};
+
 function setSyncStatus(msg,isError){
   var el = document.getElementById('cloud-sync-status');
   if(el){
@@ -2190,27 +2414,29 @@ function setSyncStatus(msg,isError){
 window.cloudUpload = async function(){
   var client = initSupabase();
   if(!client){ setSyncStatus('初始化失败，请刷新后重试',true); return; }
+  if(!currentUser){ setSyncStatus('请先登录后再上传',true); return; }
+  var uid = currentUser.id;
   setSyncStatus('正在上传...');
   var btn = document.getElementById('cloud-upload-btn');
   if(btn){ btn.disabled = true; btn.textContent = '上传中...'; }
   try{
-    // Upload all records one by one
     var dates = getAllDates();
     var success = 0, fail = 0;
     for(var i = 0; i < dates.length; i++){
       var d = dates[i];
       var rec = appData.records[d];
-      var payload = {date:d, data:rec, updated_at:new Date().toISOString()};
-      var {error} = await client.from('records').upsert(payload,{onConflict:'date'});
+      var payload = {user_id:uid, date:d, data:rec, updated_at:new Date().toISOString()};
+      var {error} = await client.from('records').upsert(payload,{onConflict:'user_id,date'});
       if(error){ fail++; console.error('Upload error for '+d+':',error); }
       else { success++; }
     }
     // Upload settings
     var {error:serr} = await client.from('records').upsert({
+      user_id:uid,
       date:'__settings__',
       data:appData.settings,
       updated_at:new Date().toISOString()
-    },{onConflict:'date'});
+    },{onConflict:'user_id,date'});
     if(serr){ fail++; } else { success++; }
     setSyncStatus('上传完成：成功 '+success+'，失败 '+fail);
   }catch(e){
@@ -2222,6 +2448,8 @@ window.cloudUpload = async function(){
 window.cloudDownload = async function(){
   var client = initSupabase();
   if(!client){ setSyncStatus('初始化失败，请刷新后重试',true); return; }
+  if(!currentUser){ setSyncStatus('请先登录后再下载',true); return; }
+  var uid = currentUser.id;
   if(!confirm('从云端下载将覆盖本地数据，确定继续？')) return;
   setSyncStatus('正在下载...');
   var btn = document.getElementById('cloud-download-btn');
@@ -2231,7 +2459,7 @@ window.cloudDownload = async function(){
     var from = 0, pageSize = 1000;
     var hasMore = true;
     while(hasMore){
-      var {data,error} = await client.from('records').select('*').range(from,from+pageSize-1);
+      var {data,error} = await client.from('records').select('*').eq('user_id',uid).range(from,from+pageSize-1);
       if(error){ setSyncStatus('下载失败：'+error.message,true); if(btn){btn.disabled=false;btn.textContent='⬇ 从云端下载';} return; }
       if(data && data.length > 0){
         allRows = allRows.concat(data);
@@ -2279,6 +2507,7 @@ function showToast(msg,type){
 function init(){
   initSupabase();
   loadData();
+  checkAuth(); // async, non-blocking
   var today = new Date();
   var wd = ['日','一','二','三','四','五','六'];
   document.getElementById('header-date').textContent =

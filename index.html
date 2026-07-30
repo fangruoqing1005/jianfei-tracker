@@ -2614,10 +2614,11 @@ function renderAuthArea(){
       '<button class="btn-logout" onclick="handleLogout()">退出登录</button>';
   } else if(authMode === 'signup'){
     area.innerHTML =
-      '<p style="font-size:12px;color:var(--text-muted);margin-bottom:14px">注册后可云同步数据，换设备不丢失。请使用真实邮箱。</p>'+
+      '<p style="font-size:12px;color:var(--text-muted);margin-bottom:14px">注册后可云同步数据，换设备不丢失。需有效邀请码。</p>'+
       '<input class="auth-input" id="auth-email" type="email" placeholder="邮箱地址" autocomplete="email">'+
       '<input class="auth-input" id="auth-password" type="password" placeholder="密码（至少6位）" autocomplete="new-password">'+
       '<input class="auth-input" id="auth-password2" type="password" placeholder="确认密码" autocomplete="new-password">'+
+      '<input class="auth-input" id="auth-invite-code" type="text" placeholder="邀请码（向已加入的朋友获取）" autocomplete="off">'+
       '<div class="auth-error" id="auth-error"></div>'+
       '<button class="btn-primary" onclick="handleSignUp()" id="auth-submit-btn">注册</button>'+
       '<div class="auth-toggle" onclick="switchAuthMode(\'login\')">已有账号？<span>去登录</span></div>';
@@ -2641,19 +2642,30 @@ window.handleSignUp = async function(){
   var emailEl = document.getElementById('auth-email');
   var pwEl = document.getElementById('auth-password');
   var pw2El = document.getElementById('auth-password2');
+  var codeEl = document.getElementById('auth-invite-code');
   var errEl = document.getElementById('auth-error');
   var btn = document.getElementById('auth-submit-btn');
   var email = (emailEl&&emailEl.value) ? emailEl.value.trim() : '';
   var pw = pwEl ? pwEl.value : '';
   var pw2 = pw2El ? pw2El.value : '';
+  var inviteCode = codeEl ? codeEl.value.trim() : '';
   if(!email){ if(errEl) errEl.textContent = '请输入邮箱地址'; return; }
   if(!pw || pw.length < 6){ if(errEl) errEl.textContent = '密码至少6位'; return; }
   if(pw !== pw2){ if(errEl) errEl.textContent = '两次密码不一致'; return; }
-  if(btn){ btn.disabled = true; btn.textContent = '注册中...'; }
+  if(!inviteCode){ if(errEl) errEl.textContent = '请输入邀请码（向已在群组中的朋友获取）'; return; }
+  if(btn){ btn.disabled = true; btn.textContent = '验证邀请码...'; }
   if(errEl) errEl.textContent = '';
   var client = initSupabase();
   if(!client){ if(errEl) errEl.textContent = '初始化失败，请刷新重试'; if(btn){btn.disabled=false;btn.textContent='注册';} return; }
   try{
+    // 校验邀请码
+    var {data:inviteCheck,error:inviteErr} = await client.from('groups').select('id').eq('invite_code',inviteCode).limit(1);
+    if(inviteErr || !inviteCheck || inviteCheck.length===0){
+      if(errEl) errEl.textContent = '邀请码无效，请向已在群组中的朋友获取有效邀请码';
+      if(btn){ btn.disabled = false; btn.textContent = '注册'; }
+      return;
+    }
+    if(btn) btn.textContent = '注册中...';
     var {data,error} = await client.auth.signUp({email:email,password:pw});
     if(error){
       if(errEl) errEl.textContent = error.message;

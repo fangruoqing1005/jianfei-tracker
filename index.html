@@ -3026,6 +3026,7 @@ window.createGroup = async function(){
   var client = initSupabase();
   if(!client) return;
   try{
+    // Step 1: 创建群组
     var {data,error} = await client.from('groups').insert({
       name:name, owner_id:currentUser.id, invite_code:code
     }).select().single();
@@ -3033,12 +3034,25 @@ window.createGroup = async function(){
       if(errEl) errEl.textContent = '创建失败：'+error.message;
       return;
     }
-    // 自动加入
-    await client.from('group_members').insert({group_id:data.id,user_id:currentUser.id});
+    if(!data||!data.id){
+      if(errEl) errEl.textContent = '创建失败：服务器未返回群组信息';
+      return;
+    }
+    // Step 2: 自动加入群组（必须检查错误）
+    var {error:joinError} = await client.from('group_members').insert({group_id:data.id,user_id:currentUser.id});
+    if(joinError){
+      console.error('group_members insert failed:',joinError);
+      // 回滚：删除刚创建的孤群
+      await client.from('groups').delete().eq('id',data.id);
+      if(errEl) errEl.textContent = '加入群组失败：'+joinError.message+'（群组已回滚）';
+      return;
+    }
     if(nameEl) nameEl.value = '';
-    showToast('群组「'+name+'」创建成功！','success');
-    loadMyGroups();
+    showToast('群组「'+name+'」创建成功！邀请码：'+data.invite_code,'success');
+    // 稍等片刻确保数据已写入，然后刷新列表
+    setTimeout(function(){ loadMyGroups(); }, 500);
   }catch(e){
+    console.error('createGroup error:',e);
     if(errEl) errEl.textContent = '创建异常：'+e.message;
   }
 };

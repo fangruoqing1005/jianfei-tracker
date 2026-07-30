@@ -1557,6 +1557,16 @@ textarea.form-input{resize:vertical;min-height:40px}
     <div class="modal-body">
       <!-- 未登录时：登录/注册卡片出现在顶部 -->
       <div id="settings-auth-top"></div>
+      <!-- ===== 个人资料 ===== -->
+      <div class="profile-section" id="profile-section" style="display:none">
+        <h3>👤 个人资料</h3>
+        <div class="form-group">
+          <label class="form-label">昵称</label>
+          <input type="text" class="form-input" id="setting-nickname" placeholder="给自己起个昵称，让小伙伴认识你" maxlength="20">
+        </div>
+        <button class="btn-primary" onclick="saveNickname()" style="margin-bottom:12px">保存昵称</button>
+        <div class="modal-divider"></div>
+      </div>
       <!-- ===== 初始数据 ===== -->
       <div id="settings-data-section">
       <h3>📊 初始数据</h3>
@@ -2482,12 +2492,91 @@ window.openSettings = function(){
   document.getElementById('setting-start-weight').value = appData.settings.startWeight||'';
   document.getElementById('setting-target-weight').value = appData.settings.targetWeight||'';
   document.getElementById('setting-height').value = appData.settings.height||'';
+  // 加载昵称
+  if(currentUser){
+    document.getElementById('profile-section').style.display = 'block';
+    loadProfileNickname();
+  } else {
+    document.getElementById('profile-section').style.display = 'none';
+  }
   renderAuthArea();
   document.getElementById('settings-modal').classList.add('active');
 };
 window.closeSettings = function(){
   document.getElementById('settings-modal').classList.remove('active');
 };
+
+// ====== 个人资料（昵称） ======
+window.currentNickname = null;
+
+async function loadProfileNickname(){
+  var el = document.getElementById('setting-nickname');
+  if(!currentUser){ el.value = ''; return; }
+  var client = initSupabase();
+  if(!client) return;
+  try{
+    var {data} = await client.from('profiles').select('nickname').eq('user_id',currentUser.id).limit(1);
+    if(data&&data.length>0){
+      el.value = data[0].nickname;
+      currentNickname = data[0].nickname;
+    } else {
+      el.value = '';
+      currentNickname = null;
+    }
+  }catch(e){
+    console.error('loadProfileNickname error:',e);
+  }
+}
+
+window.saveNickname = async function(){
+  var el = document.getElementById('setting-nickname');
+  var nickname = el.value.trim();
+  if(!nickname){ showToast('请输入昵称','info'); return; }
+  if(!currentUser){ showToast('请先登录','info'); return; }
+  var client = initSupabase();
+  if(!client) return;
+  try{
+    var {error} = await client.from('profiles').upsert({
+      user_id: currentUser.id,
+      nickname: nickname,
+      updated_at: new Date().toISOString()
+    });
+    if(error){ showToast('保存失败：'+error.message,'error'); return; }
+    currentNickname = nickname;
+    showToast('昵称已保存！','success');
+    updateUserBadge();
+  }catch(e){
+    showToast('保存异常：'+e.message,'error');
+  }
+};
+
+// 加载当前用户的昵称（用于初始化）
+async function loadCurrentNickname(){
+  if(!currentUser) return;
+  var client = initSupabase();
+  if(!client) return;
+  try{
+    var {data} = await client.from('profiles').select('nickname').eq('user_id',currentUser.id).limit(1);
+    if(data&&data.length>0){
+      currentNickname = data[0].nickname;
+    }
+  }catch(e){ /* 表可能还不存在，忽略 */ }
+}
+
+// 批量获取用户昵称
+async function batchGetNicknames(userIds){
+  var result = {};
+  if(!userIds||userIds.length===0) return result;
+  var client = initSupabase();
+  if(!client) return result;
+  try{
+    var {data} = await client.from('profiles').select('user_id,nickname').in('user_id',userIds);
+    for(var i=0;i<(data||[]).length;i++){
+      result[data[i].user_id] = data[i].nickname;
+    }
+  }catch(e){ /* 忽略 */ }
+  return result;
+}
 window.saveSettings = function(){
   appData.settings.startWeight = parseFloat(document.getElementById('setting-start-weight').value)||null;
   appData.settings.targetWeight = parseFloat(document.getElementById('setting-target-weight').value)||null;
@@ -2560,11 +2649,12 @@ function initSupabase(){
       if(event==='SIGNED_IN'||event==='TOKEN_REFRESHED'){
         if(session&&session.user){
           currentUser = session.user;
-          updateUserBadge();
+          loadCurrentNickname().then(function(){ updateUserBadge(); });
           renderAuthArea();
         }
       } else if(event==='SIGNED_OUT'){
         currentUser = null;
+        currentNickname = null;
         updateUserBadge();
         renderAuthArea();
       }
@@ -2587,6 +2677,7 @@ window.checkAuth = async function(){
     var {data:{session}} = await client.auth.getSession();
     if(session && session.user){
       currentUser = session.user;
+      await loadCurrentNickname();
     }
     updateUserBadge();
     renderAuthArea();
@@ -2601,10 +2692,10 @@ function updateUserBadge(){
   var badge = document.getElementById('user-badge');
   if(!badge) return;
   if(currentUser){
-    var email = currentUser.email || '';
-    badge.textContent = email.length > 15 ? email.substring(0,13)+'...' : email;
+    var display = currentNickname || (currentUser.email ? currentUser.email.split('@')[0] : '用户');
+    badge.textContent = display.length > 15 ? display.substring(0,13)+'...' : display;
     badge.classList.add('logged-in');
-    badge.title = '已登录: '+email;
+    badge.title = '已登录: '+(currentUser.email||'');
   } else {
     badge.textContent = '未登录';
     badge.classList.remove('logged-in');
@@ -2899,6 +2990,7 @@ window.loadMyGroups = async function(){
 
     // 查询每个群组的成员数和分享设置
     var groupData = [];
+    var allMemberIds = [];
     for(var i=0;i<groups.length;i++){
       var g = groups[i];
       var {count:c,error:err3} = await client.from('group_members').select('*',{count:'exact',head:true}).eq('group_id',g.id);
@@ -2910,6 +3002,7 @@ window.loadMyGroups = async function(){
       // 查询成员
       var {data:members} = await client.from('group_members').select('user_id').eq('group_id',g.id);
       var memberIds = (members||[]).map(function(m){return m.user_id;});
+      allMemberIds = allMemberIds.concat(memberIds);
 
       groupData.push({
         id:g.id,
@@ -2920,6 +3013,14 @@ window.loadMyGroups = async function(){
         memberIds:memberIds,
         share:share
       });
+    }
+    // 批量获取所有成员的昵称
+    var uniqueIds = allMemberIds.filter(function(v,i,a){return a.indexOf(v)===i;});
+    var nicknames = await batchGetNicknames(uniqueIds);
+    window._groupNicknames = nicknames;
+    // 附加昵称到 groupData 中
+    for(var i=0;i<groupData.length;i++){
+      groupData[i].nicknames = nicknames;
     }
     renderGroupList(groupData);
   }catch(e){
@@ -3232,10 +3333,11 @@ async function loadLeaderboard(groupId,idx,period){
         recordsByUser[rec.user_id].push(rec);
       }
 
-      // 获取成员 email 作为昵称
+      // 获取成员昵称
+      var nicknames = window._groupNicknames || {};
       var userNames = {};
       for(var u=0;u<memberIds.length;u++){
-        userNames[memberIds[u]] = '用户'+memberIds[u].substring(0,6);
+        userNames[memberIds[u]] = nicknames[memberIds[u]] || '用户'+memberIds[u].substring(0,6);
       }
 
       // 计算每个人的减重数据
@@ -3360,6 +3462,11 @@ window.viewMemberDetail = async function(memberId){
   if(!client) return;
 
   try{
+    // 获取该成员的昵称
+    var nicknames = window._groupNicknames || {};
+    var memberName = nicknames[memberId] || '用户'+memberId.substring(0,6);
+    document.getElementById('member-detail-name').textContent = memberName;
+
     // 获取该成员的 records
     var {data:records} = await client.from('records').select('*').eq('user_id',memberId).order('date',{ascending:true});
     var userRecords = records||[];

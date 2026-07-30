@@ -3390,16 +3390,23 @@ async function loadLeaderboard(groupId,idx,period){
   if(!client) return;
 
   try{
+    // 获取该群组所有成员
+    var {data:members} = await client.from('group_members').select('user_id').eq('group_id',groupId);
+    if(!members||members.length===0){
+      listEl.innerHTML = '<div class="rank-empty">暂无成员</div>';
+      return;
+    }
+    var memberIds = members.map(function(m){return m.user_id;});
+
+    // 始终从数据库获取最新昵称
+    var nicknames = await batchGetNicknames(memberIds);
+    var userNames = {};
+    for(var u=0;u<memberIds.length;u++){
+      userNames[memberIds[u]] = nicknames[memberIds[u]] || '用户'+memberIds[u].substring(0,6);
+    }
+
     var cacheKey = groupId+'_'+period;
     if(!leaderboardCache[cacheKey]){
-      // 获取该群组所有成员
-      var {data:members} = await client.from('group_members').select('user_id').eq('group_id',groupId);
-      if(!members||members.length===0){
-        listEl.innerHTML = '<div class="rank-empty">暂无成员</div>';
-        return;
-      }
-      var memberIds = members.map(function(m){return m.user_id;});
-
       // 获取分享体重数据的成员
       var {data:shares} = await client.from('shared_data').select('user_id').eq('group_id',groupId).eq('share_weight',true);
       var sharingIds = (shares||[]).map(function(s){return s.user_id;});
@@ -3411,13 +3418,6 @@ async function loadLeaderboard(groupId,idx,period){
         var rec = allRecords[r];
         if(!recordsByUser[rec.user_id]) recordsByUser[rec.user_id] = [];
         recordsByUser[rec.user_id].push(rec);
-      }
-
-      // 获取成员昵称
-      var nicknames = window._groupNicknames || {};
-      var userNames = {};
-      for(var u=0;u<memberIds.length;u++){
-        userNames[memberIds[u]] = nicknames[memberIds[u]] || '用户'+memberIds[u].substring(0,6);
       }
 
       // 计算每个人的减重数据
@@ -3487,6 +3487,11 @@ async function loadLeaderboard(groupId,idx,period){
       });
 
       leaderboardCache[cacheKey] = rankings;
+    } else {
+      // 刷新缓存中的昵称（用户可能刚修改了昵称）
+      for(var i=0;i<leaderboardCache[cacheKey].length;i++){
+        leaderboardCache[cacheKey][i].name = userNames[leaderboardCache[cacheKey][i].userId] || leaderboardCache[cacheKey][i].name;
+      }
     }
 
     renderLeaderboard(listEl,leaderboardCache[cacheKey],period);
@@ -3543,7 +3548,7 @@ window.viewMemberDetail = async function(memberId){
 
   try{
     // 获取该成员的昵称
-    var nicknames = window._groupNicknames || {};
+    var nicknames = await batchGetNicknames([memberId]);
     var memberName = nicknames[memberId] || '用户'+memberId.substring(0,6);
     document.getElementById('member-detail-name').textContent = memberName;
 

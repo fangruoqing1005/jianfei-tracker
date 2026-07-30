@@ -1513,10 +1513,8 @@ textarea.form-input{resize:vertical;min-height:40px}
     <!-- 创建群组 -->
     <div class="group-form-card" id="create-group-card">
       <h4>✨ 创建新群组</h4>
-      <div class="group-form-row">
-        <input id="new-group-name" type="text" placeholder="输入群组名称，如：闺蜜减肥圈">
-        <button class="group-btn-sm primary" onclick="createGroup()" style="flex-shrink:0;padding:10px 20px;font-size:14px">创建</button>
-      </div>
+      <input id="new-group-name" type="text" placeholder="输入群组名称，如：闺蜜减肥圈" style="width:100%;box-sizing:border-box;margin-bottom:10px">
+      <button class="group-btn-sm primary" onclick="createGroup()" style="width:100%;padding:12px;font-size:14px">创建</button>
       <div id="create-group-error" style="font-size:12px;color:var(--danger);text-align:center;margin-top:8px;min-height:18px"></div>
     </div>
 
@@ -2890,12 +2888,12 @@ window.loadMyGroups = async function(){
   try{
     // 查询我的群组
     var {data:memberships,error:err1} = await client.from('group_members').select('group_id').eq('user_id',currentUser.id);
-    if(err1){ showGroupError(); return; }
+    if(err1){ console.error('memberships query error:',err1); showGroupError('无法读取成员关系：'+err1.message); return; }
     var myGroupIds = (memberships||[]).map(function(m){return m.group_id;});
 
     // 查询所有群组的基本信息
     var {data:allGroups,error:err2} = await client.from('groups').select('*').order('created_at',{ascending:false});
-    if(err2){ showGroupError(); return; }
+    if(err2){ console.error('groups query error:',err2); showGroupError('无法读取群组：'+err2.message); return; }
 
     var groups = (allGroups||[]).filter(function(g){
       return myGroupIds.indexOf(g.id) !== -1;
@@ -2932,8 +2930,9 @@ window.loadMyGroups = async function(){
   }
 };
 
-function showGroupError(){
-  document.getElementById('group-list').innerHTML = '<div class="empty-state"><div class="empty-icon">⚠</div><div class="empty-text">加载失败，请刷新重试</div></div>';
+function showGroupError(msg){
+  var text = msg || '加载失败，请刷新重试';
+  document.getElementById('group-list').innerHTML = '<div class="empty-state"><div class="empty-icon">⚠</div><div class="empty-text">'+escHtml(text)+'</div></div>';
 }
 
 function renderGroupList(groups){

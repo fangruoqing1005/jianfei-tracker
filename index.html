@@ -910,18 +910,6 @@ textarea.form-input{resize:vertical;min-height:40px}
 .group-form-card h4{
   font-size:14px;font-weight:600;color:var(--text-title);margin-bottom:12px;
 }
-.group-form-card input{
-  width:100%;
-  box-sizing:border-box;
-  padding:12px 14px;
-  border:1px solid var(--border);
-  border-radius:var(--radius-sm);
-  font-size:14px;outline:none;
-  background:var(--card);color:var(--text);
-  font-family:inherit;
-  margin-bottom:10px;
-}
-.group-form-card input:focus{border-color:var(--text-title)}
 .group-form-row{
   display:flex;gap:8px;align-items:flex-end;
 }
@@ -971,17 +959,20 @@ textarea.form-input{resize:vertical;min-height:40px}
 .join-box h4{
   font-size:14px;font-weight:600;color:var(--text-title);margin-bottom:12px;
 }
-.join-box .join-link-input{
+.join-box .join-link-input,
+.group-form-card .join-link-input{
   width:100%;
-  padding:10px 14px;
+  padding:12px 14px;
   border:1px solid var(--border);
   border-radius:var(--radius-sm);
   font-size:14px;outline:none;
   background:var(--card);color:var(--text);
   margin-bottom:10px;
   font-family:inherit;
+  box-sizing:border-box;
 }
-.join-box .join-link-input:focus{border-color:var(--text-title)}
+.join-box .join-link-input:focus,
+.group-form-card .join-link-input:focus{border-color:var(--text-title)}
 
 .share-row{
   display:flex;align-items:center;justify-content:space-between;
@@ -1520,7 +1511,7 @@ textarea.form-input{resize:vertical;min-height:40px}
     <!-- 创建群组 -->
     <div class="group-form-card" id="create-group-card">
       <h4>✨ 创建新群组</h4>
-      <input id="new-group-name" type="text" placeholder="输入群组名称，如：闺蜜减肥圈">
+      <input class="join-link-input" id="new-group-name" type="text" placeholder="输入群组名称，如：闺蜜减肥圈">
       <button class="group-btn-sm primary" onclick="createGroup()" style="width:100%;padding:12px;font-size:14px">创建</button>
       <div id="create-group-error" style="font-size:12px;color:var(--danger);text-align:center;margin-top:8px;min-height:18px"></div>
     </div>

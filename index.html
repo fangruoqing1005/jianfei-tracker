@@ -1017,6 +1017,102 @@ textarea.form-input{resize:vertical;min-height:40px}
 .empty-state .empty-text{font-size:14px;line-height:1.6}
 .empty-state .empty-hint{font-size:12px;margin-top:6px}
 
+/* ====== Group Leaderboard ====== */
+.leaderboard-section{
+  margin-top:12px;border-top:1px solid var(--border);padding-top:12px;display:none;
+}
+.leaderboard-section.open{display:block}
+
+.rank-expand-btn{
+  display:inline-flex;align-items:center;gap:4px;padding:6px 14px;
+  border-radius:16px;border:1px solid var(--border);font-size:12px;
+  cursor:pointer;background:var(--card-bg);color:var(--text-title);
+  transition:all .2s;margin-top:8px;
+}
+.rank-expand-btn:hover{border-color:var(--text-title)}
+.rank-expand-btn .arrow{font-size:10px;transition:transform .2s}
+.rank-expand-btn.expanded .arrow{transform:rotate(180deg)}
+
+.rank-tabs{
+  display:flex;gap:6px;margin-bottom:12px;
+}
+.rank-tab{
+  padding:5px 14px;border-radius:20px;border:1px solid var(--border);
+  font-size:12px;cursor:pointer;background:var(--card-bg);color:var(--text-muted);
+  transition:all .2s;
+}
+.rank-tab.active{
+  background:var(--text-title);color:#fff;border-color:var(--text-title);
+}
+.rank-tab:hover:not(.active){border-color:var(--text-title);color:var(--text-title)}
+
+.rank-list{margin-bottom:10px}
+.rank-item{
+  display:flex;align-items:center;gap:10px;padding:8px 0;
+  border-bottom:1px solid var(--border-light);cursor:pointer;transition:background .15s;
+}
+.rank-item:hover{background:rgba(128,0,128,.03)}
+.rank-item:last-child{border-bottom:none}
+.rank-badge{
+  width:28px;height:28px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;
+}
+.rank-badge.gold{background:#FFD700;color:#8B6914}
+.rank-badge.silver{background:#C0C0C0;color:#555}
+.rank-badge.bronze{background:#CD7F32;color:#fff}
+.rank-badge.normal{background:var(--border-light);color:var(--text-muted)}
+.rank-name{flex:1;font-size:14px;font-weight:500;color:var(--text-title);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rank-change{font-size:13px;font-weight:600;white-space:nowrap}
+.rank-change.lost{color:var(--success)}
+.rank-change.gain{color:var(--danger)}
+.rank-change.no-data{color:var(--text-muted);font-size:12px}
+.rank-empty{
+  text-align:center;padding:20px 0;color:var(--text-muted);font-size:13px;
+}
+
+/* ====== Member Detail Modal ====== */
+.member-detail-modal{
+  position:fixed;top:0;left:0;width:100%;height:100%;z-index:2000;
+  background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;
+  padding:16px;
+}
+.member-detail-content{
+  background:var(--card-bg);border-radius:var(--radius-xl);
+  width:100%;max-width:420px;max-height:85vh;overflow-y:auto;
+  padding:20px;animation:slideUp .25s ease;
+}
+.member-detail-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:16px;
+}
+.member-detail-name{font-size:18px;font-weight:700;color:var(--text-title)}
+.member-detail-close{
+  width:32px;height:32px;border-radius:50%;border:none;background:var(--border-light);
+  cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;
+  color:var(--text-muted);transition:all .15s;
+}
+.member-detail-close:hover{background:var(--danger-light);color:var(--danger)}
+
+.member-detail-section{margin-bottom:16px}
+.member-detail-section-title{
+  font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:8px;
+  text-transform:uppercase;letter-spacing:.5px;
+}
+.member-achieve-list{
+  display:flex;flex-wrap:wrap;gap:6px;
+}
+.member-achieve-tag{
+  display:inline-flex;align-items:center;gap:4px;padding:4px 10px;
+  border-radius:12px;font-size:12px;background:var(--success-light);color:var(--success);
+}
+.member-stat-count{
+  font-size:28px;font-weight:700;color:var(--text-title);
+}
+.member-stat-label{font-size:12px;color:var(--text-muted)}
+.member-no-share{
+  text-align:center;padding:20px;color:var(--text-muted);font-size:13px;
+}
+
 /* ====== Date Picker ====== */
 .date-picker-modal .modal-content{max-width:340px;padding:22px}
 .dp-header{
@@ -1426,6 +1522,29 @@ textarea.form-input{resize:vertical;min-height:40px}
 
     <!-- 群组列表 -->
     <div id="group-list"></div>
+
+    <!-- 成员详情弹窗 -->
+    <div class="member-detail-modal" id="member-detail-modal" style="display:none" onclick="if(event.target===this)closeMemberDetail()">
+      <div class="member-detail-content">
+        <div class="member-detail-header">
+          <div class="member-detail-name" id="member-detail-name"></div>
+          <button class="member-detail-close" onclick="closeMemberDetail()">✕</button>
+        </div>
+        <div class="member-detail-section" id="member-weight-section">
+          <div class="member-detail-section-title">体重变化</div>
+          <div class="member-detail-chart" style="height:200px"><canvas id="member-weight-chart"></canvas></div>
+        </div>
+        <div class="member-detail-section" id="member-achieve-section">
+          <div class="member-detail-section-title">成就徽章</div>
+          <div class="member-achieve-list" id="member-achieve-list"></div>
+        </div>
+        <div class="member-detail-section" id="member-checkin-section">
+          <div class="member-detail-section-title">打卡天数</div>
+          <div class="member-stat-count" id="member-checkin-count">-</div>
+          <div class="member-stat-label">累计打卡</div>
+        </div>
+      </div>
+    </div>
 
   </div>
 </section>
@@ -2699,6 +2818,7 @@ function showToast(msg,type){
 
 /* ====== Groups ====== */
 window.loadMyGroups = async function(){
+  leaderboardCache = {}; // 清除排行榜缓存
   if(!currentUser){
     document.getElementById('group-list').innerHTML = '<div class="empty-state"><div class="empty-icon">🔒</div><div class="empty-text">请先登录后使用群组功能</div></div>';
     document.getElementById('create-group-card').style.display = 'none';
@@ -2795,6 +2915,16 @@ function renderGroupList(groups){
     html += '<button class="share-toggle'+(g.share.share_achievements?' on':'')+'" id="sw-achieve-'+i+'" onclick="toggleShare(\''+escAttr(g.id)+'\',\'share_achievements\','+i+')"></button></div>';
     html += '<div class="share-row"><div><div class="share-label">打卡天数</div><div class="share-desc">允许群友看到你的打卡天数</div></div>';
     html += '<button class="share-toggle'+(g.share.share_checkin?' on':'')+'" id="sw-checkin-'+i+'" onclick="toggleShare(\''+escAttr(g.id)+'\',\'share_checkin\','+i+')"></button></div>';
+    html += '</div>';
+    // 排行榜按钮
+    html += '<button class="rank-expand-btn" id="rank-btn-'+i+'" onclick="toggleLeaderboard(\''+escAttr(g.id)+'\','+i+')">🏆 查看排行榜 <span class="arrow">▾</span></button>';
+    html += '<div class="leaderboard-section" id="leaderboard-'+i+'">';
+    html += '<div class="rank-tabs">';
+    html += '<button class="rank-tab active" onclick="switchRankTab(\''+escAttr(g.id)+'\','+i+',\'total\')">累计减重</button>';
+    html += '<button class="rank-tab" onclick="switchRankTab(\''+escAttr(g.id)+'\','+i+',\'weekly\')">本周减重</button>';
+    html += '<button class="rank-tab" onclick="switchRankTab(\''+escAttr(g.id)+'\','+i+',\'daily\')">今日减重</button>';
+    html += '</div>';
+    html += '<div class="rank-list" id="rank-list-'+i+'"></div>';
     html += '</div>';
     // 操作按钮
     html += '<div class="group-card-actions">';
@@ -2976,6 +3106,270 @@ window.toggleShare = async function(groupId,field,idx){
     showToast('操作失败：'+e.message,true);
   }
 };
+
+/* ====== Leaderboard ====== */
+window.toggleLeaderboard = function(groupId,idx){
+  var section = document.getElementById('leaderboard-'+idx);
+  var btn = document.getElementById('rank-btn-'+idx);
+  if(!section||!btn) return;
+  var isOpen = section.classList.contains('open');
+  if(isOpen){
+    section.classList.remove('open');
+    btn.classList.remove('expanded');
+  } else {
+    section.classList.add('open');
+    btn.classList.add('expanded');
+    loadLeaderboard(groupId,idx,'total');
+  }
+};
+
+window.switchRankTab = function(groupId,idx,period){
+  var tabs = document.querySelectorAll('#leaderboard-'+idx+' .rank-tab');
+  for(var i=0;i<tabs.length;i++){tabs[i].classList.remove('active');}
+  var activeTab = document.querySelector('#leaderboard-'+idx+' .rank-tab[onclick*="'+period+'"]');
+  if(activeTab) activeTab.classList.add('active');
+  loadLeaderboard(groupId,idx,period);
+};
+
+var leaderboardCache = {};
+
+async function loadLeaderboard(groupId,idx,period){
+  var listEl = document.getElementById('rank-list-'+idx);
+  if(!listEl) return;
+  listEl.innerHTML = '<div class="rank-empty">加载中...</div>';
+
+  var client = initSupabase();
+  if(!client) return;
+
+  try{
+    var cacheKey = groupId+'_'+period;
+    if(!leaderboardCache[cacheKey]){
+      // 获取该群组所有成员
+      var {data:members} = await client.from('group_members').select('user_id').eq('group_id',groupId);
+      if(!members||members.length===0){
+        listEl.innerHTML = '<div class="rank-empty">暂无成员</div>';
+        return;
+      }
+      var memberIds = members.map(function(m){return m.user_id;});
+
+      // 获取分享体重数据的成员
+      var {data:shares} = await client.from('shared_data').select('user_id').eq('group_id',groupId).eq('share_weight',true);
+      var sharingIds = (shares||[]).map(function(s){return s.user_id;});
+
+      // 获取所有成员的 records
+      var {data:allRecords} = await client.from('records').select('*').in('user_id',memberIds).order('date',{ascending:true});
+      var recordsByUser = {};
+      for(var r=0;r<(allRecords||[]).length;r++){
+        var rec = allRecords[r];
+        if(!recordsByUser[rec.user_id]) recordsByUser[rec.user_id] = [];
+        recordsByUser[rec.user_id].push(rec);
+      }
+
+      // 获取成员 email 作为昵称
+      var userNames = {};
+      for(var u=0;u<memberIds.length;u++){
+        userNames[memberIds[u]] = '用户'+memberIds[u].substring(0,6);
+      }
+
+      // 计算每个人的减重数据
+      var rankings = [];
+      var now = new Date();
+      var todayStr = now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate());
+
+      // 本周一
+      var dayOfWeek = now.getDay();
+      var monday = new Date(now);
+      monday.setDate(now.getDate()-(dayOfWeek===0?6:dayOfWeek-1));
+      var mondayStr = monday.getFullYear()+'-'+pad(monday.getMonth()+1)+'-'+pad(monday.getDate());
+
+      for(var m=0;m<memberIds.length;m++){
+        var uid = memberIds[m];
+        var userRecords = recordsByUser[uid]||[];
+        var showsWeight = sharingIds.indexOf(uid)>=0;
+
+        var entry = {userId:uid,name:userNames[uid],sharesWeight:showsWeight,change:null,hasData:false};
+
+        if(userRecords.length>0 && showsWeight){
+          // 筛选有体重数据的记录
+          var withWeight = userRecords.filter(function(r){return r.data&&r.data.weight;});
+          if(withWeight.length>0){
+            entry.hasData = true;
+            if(period==='total'){
+              // 累计减重 = 最早体重 - 最新体重
+              var first = withWeight[0].data.weight;
+              var last = withWeight[withWeight.length-1].data.weight;
+              entry.change = round005(last-first); // 正值=增重, 负值=减重
+            } else if(period==='weekly'){
+              // 本周减重
+              var weekRecs = withWeight.filter(function(r){return r.date>=mondayStr;});
+              if(weekRecs.length>=2){
+                var wFirst = weekRecs[0].data.weight;
+                var wLast = weekRecs[weekRecs.length-1].data.weight;
+                entry.change = round005(wLast-wFirst);
+              } else if(weekRecs.length===1){
+                // 只有一条本周记录，和上周最后一条比
+                var beforeWeek = withWeight.filter(function(r){return r.date<mondayStr;});
+                if(beforeWeek.length>0){
+                  var prevW = beforeWeek[beforeWeek.length-1].data.weight;
+                  entry.change = round005(weekRecs[0].data.weight-prevW);
+                }
+              }
+            } else if(period==='daily'){
+              // 今日减重
+              var todayRecs = withWeight.filter(function(r){return r.date===todayStr;});
+              if(todayRecs.length>0){
+                var todayBefore = withWeight.filter(function(r){return r.date<todayStr;});
+                if(todayBefore.length>0){
+                  entry.change = round005(todayRecs[0].data.weight-todayBefore[todayBefore.length-1].data.weight);
+                }
+              }
+            }
+          }
+        }
+        rankings.push(entry);
+      }
+
+      // 排序：减重多的在前（change为负值=减重），没有数据的排最后
+      rankings.sort(function(a,b){
+        if(a.change===null&&b.change===null) return 0;
+        if(a.change===null) return 1;
+        if(b.change===null) return -1;
+        return a.change-b.change; // 负值=减重多排前面
+      });
+
+      leaderboardCache[cacheKey] = rankings;
+    }
+
+    renderLeaderboard(listEl,leaderboardCache[cacheKey],period);
+  }catch(e){
+    console.error('loadLeaderboard error:',e);
+    listEl.innerHTML = '<div class="rank-empty">加载失败</div>';
+  }
+}
+
+function renderLeaderboard(el,rankings,period){
+  if(rankings.length===0){
+    el.innerHTML = '<div class="rank-empty">暂无排行数据</div>';
+    return;
+  }
+
+  var badgeClass = ['gold','silver','bronze'];
+  var periodLabel = period==='total'?'累计':(period==='weekly'?'本周':'今日');
+  var html = '';
+  for(var r=0;r<rankings.length;r++){
+    var entry = rankings[r];
+    var bc = r<3?badgeClass[r]:'normal';
+    html += '<div class="rank-item" onclick="viewMemberDetail(\''+escAttr(entry.userId)+'\')">';
+    html += '<div class="rank-badge '+bc+'">'+(r+1)+'</div>';
+    html += '<div class="rank-name">'+escHtml(entry.name)+'</div>';
+    if(!entry.sharesWeight){
+      html += '<div class="rank-change no-data">未分享</div>';
+    } else if(entry.change===null){
+      html += '<div class="rank-change no-data">'+periodLabel+'无数据</div>';
+    } else if(entry.change<0){
+      html += '<div class="rank-change lost">▼ '+Math.abs(entry.change).toFixed(2)+' kg</div>';
+    } else if(entry.change>0){
+      html += '<div class="rank-change gain">▲ +'+entry.change.toFixed(2)+' kg</div>';
+    } else {
+      html += '<div class="rank-change no-data">-</div>';
+    }
+    html += '</div>';
+  }
+  el.innerHTML = html;
+}
+
+var memberDetailChart = null;
+
+window.viewMemberDetail = async function(memberId){
+  if(memberId===currentUser.id) return; // 不查看自己的
+
+  var modal = document.getElementById('member-detail-modal');
+  document.getElementById('member-detail-name').textContent = '成员详情';
+  document.getElementById('member-achieve-list').innerHTML = '';
+  document.getElementById('member-checkin-count').textContent = '-';
+  modal.style.display = 'flex';
+
+  var client = initSupabase();
+  if(!client) return;
+
+  try{
+    // 获取该成员的 records
+    var {data:records} = await client.from('records').select('*').eq('user_id',memberId).order('date',{ascending:true});
+    var userRecords = records||[];
+    var withWeight = userRecords.filter(function(r){return r.data&&r.data.weight;});
+
+    // --- 体重图表 ---
+    var weightSection = document.getElementById('member-weight-section');
+    var chartCanvas = document.getElementById('member-weight-chart');
+    if(withWeight.length>0){
+      weightSection.style.display = 'block';
+      var labels = withWeight.map(function(r){return r.date.slice(5);});
+      var weights = withWeight.map(function(r){return r.data.weight;});
+      var ctx = chartCanvas.getContext('2d');
+      if(memberDetailChart) memberDetailChart.destroy();
+      memberDetailChart = new Chart(ctx,{
+        type:'line',
+        data:{
+          labels:labels,
+          datasets:[{label:'体重 (kg)',data:weights,borderColor:'#9333ea',backgroundColor:'rgba(147,51,234,.08)',fill:true,tension:.3,pointRadius:2,pointHoverRadius:5}]
+        },
+        options:{
+          responsive:true,maintainAspectRatio:false,
+          plugins:{legend:{display:false}},
+          scales:{
+            x:{ticks:{maxTicksLimit:8,font:{size:10}},grid:{display:false}},
+            y:{ticks:{font:{size:10}},grid:{color:'#f0e6f6'}}
+          }
+        }
+      });
+    } else {
+      weightSection.style.display = 'none';
+    }
+
+    // --- 打卡天数 ---
+    var checkinDays = userRecords.length;
+    document.getElementById('member-checkin-count').textContent = checkinDays;
+
+    // --- 成就徽章 ---
+    var achList = document.getElementById('member-achieve-list');
+    var total = checkinDays;
+    var ach = [];
+    if(total>=7) ach.push({icon:'🔥',name:'坚持7天'});
+    if(total>=14) ach.push({icon:'⭐',name:'坚持14天'});
+    if(total>=30) ach.push({icon:'🌟',name:'坚持30天'});
+    if(total>=60) ach.push({icon:'🏆',name:'坚持60天'});
+    if(total>=100) ach.push({icon:'👑',name:'坚持100天'});
+
+    if(withWeight.length>0){
+      var firstW = withWeight[0].data.weight;
+      var lastW = withWeight[withWeight.length-1].data.weight;
+      var lost = firstW-lastW;
+      if(lost>=1) ach.push({icon:'🥉',name:'减重1kg'});
+      if(lost>=3) ach.push({icon:'🥈',name:'减重3kg'});
+      if(lost>=5) ach.push({icon:'🥇',name:'减重5kg'});
+      if(lost>=10) ach.push({icon:'💎',name:'减重10kg'});
+    }
+    if(ach.length===0){
+      achList.innerHTML = '<div class="member-no-share" style="padding:8px">暂无成就</div>';
+    } else {
+      var achHtml = '';
+      for(var a=0;a<ach.length;a++){
+        achHtml += '<div class="member-achieve-tag">'+ach[a].icon+' '+ach[a].name+'</div>';
+      }
+      achList.innerHTML = achHtml;
+    }
+  }catch(e){
+    console.error('viewMemberDetail error:',e);
+  }
+};
+
+window.closeMemberDetail = function(){
+  document.getElementById('member-detail-modal').style.display = 'none';
+  if(memberDetailChart){memberDetailChart.destroy();memberDetailChart=null;}
+};
+
+function pad(n){return n<10?'0'+n:''+n;}
+function round005(v){return Math.round(v*100)/100;}
 
 /* ====== Init ====== */
 function init(){

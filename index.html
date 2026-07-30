@@ -2832,6 +2832,7 @@ window.handleSignUp = async function(){
   if(errEl) errEl.textContent = '';
   var client = initSupabase();
   if(!client){ if(errEl) errEl.textContent = '初始化失败，请刷新重试'; if(btn){btn.disabled=false;btn.textContent='注册';} return; }
+  var matchedGroupId = null;
   try{
     // 检查系统中是否已有群组 — 第一个用户无需邀请码
     var {count:groupCount,error:countErr} = await client.from('groups').select('*',{count:'exact',head:true});
@@ -2845,6 +2846,7 @@ window.handleSignUp = async function(){
         if(btn){ btn.disabled = false; btn.textContent = '注册'; }
         return;
       }
+      matchedGroupId = inviteCheck[0].id;
     }
     if(btn) btn.textContent = '注册中...';
     var {data,error} = await client.auth.signUp({email:email,password:pw});
@@ -2857,7 +2859,18 @@ window.handleSignUp = async function(){
       currentUser = data.user;
       updateUserBadge();
       renderAuthArea();
-      showToast('注册成功！','success');
+      // 自动加入群组
+      if(matchedGroupId){
+        var {error:joinErr} = await client.from('group_members').insert({group_id:matchedGroupId,user_id:data.user.id});
+        if(joinErr){
+          console.warn('Auto-join group failed:',joinErr.message);
+          showToast('注册成功！但自动加入群组失败，请手动加入','info');
+        } else {
+          showToast('注册成功！已自动加入群组','success');
+        }
+      } else {
+        showToast('注册成功！','success');
+      }
     }
   }catch(e){
     if(errEl) errEl.textContent = '注册异常：'+e.message;

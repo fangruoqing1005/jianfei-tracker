@@ -536,13 +536,33 @@ textarea.form-input{resize:vertical;min-height:40px}
 
 /* ====== AI 减脂教练 ====== */
 .ai-coach-card{background:linear-gradient(135deg,#f0e6ff,#e6f0ff);border-color:#d4c4f0}
+.ai-style-badge-wrapper{position:relative;display:inline-block}
 .ai-style-badge{
   display:inline-block;font-size:11px;font-weight:600;
   padding:2px 10px;border-radius:99px;
   background:rgba(255,255,255,.7);color:var(--primary);
   margin-left:8px;cursor:pointer;transition:all .2s;
+  position:relative;z-index:101;
 }
 .ai-style-badge:hover{background:rgba(255,255,255,.95)}
+.ai-style-dropdown{
+  position:absolute;top:calc(100% + 4px);right:0;
+  background:#fff;border-radius:var(--radius-md);
+  box-shadow:0 4px 20px rgba(0,0,0,.12);
+  padding:6px;z-index:100;
+  min-width:120px;animation:ddFadeIn .15s ease;
+}
+@keyframes ddFadeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.style-option-drop{
+  display:block;width:100%;text-align:left;
+  border:none;background:none;
+  padding:8px 14px;border-radius:var(--radius-sm);
+  font-size:13px;cursor:pointer;transition:all .15s;
+  margin-bottom:1px;
+}
+.style-option-drop:last-child{margin-bottom:0}
+.style-option-drop:hover{background:var(--bg)}
+.style-option-drop.active{background:var(--primary);color:#fff}
 .ai-coach-loading{
   display:flex;align-items:center;justify-content:center;
   padding:24px 0;
@@ -591,32 +611,6 @@ textarea.form-input{resize:vertical;min-height:40px}
 }
 .ai-refresh-btn:hover{background:var(--primary);color:#fff}
 .ai-refresh-btn:disabled{opacity:.5;cursor:not-allowed}
-
-/* 风格选择器 */
-.style-selector{display:flex;flex-wrap:wrap;gap:8px}
-.style-selector.compact{gap:6px}
-.style-selector.compact .style-option{padding:5px 11px;font-size:12px}
-.ai-style-section{
-  display:flex;align-items:center;justify-content:space-between;
-  gap:10px;margin-top:12px;padding-top:12px;
-  border-top:1px dashed rgba(0,0,0,.08);
-}
-.ai-save-style-btn{
-  flex-shrink:0;padding:6px 16px;border-radius:99px;
-  border:none;background:var(--primary);color:#fff;
-  font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;
-}
-.ai-save-style-btn:hover{background:var(--primary-dark)}
-.ai-save-style-btn:disabled{opacity:.5;cursor:not-allowed}
-.style-option{
-  padding:6px 14px;border-radius:99px;
-  border:1px solid var(--border);background:var(--bg);
-  font-size:13px;cursor:pointer;transition:all .2s;
-}
-.style-option:hover{border-color:var(--primary)}
-.style-option.active{
-  background:var(--primary);color:#fff;border-color:var(--primary);
-}
 .suggestion-item{
   padding:10px 16px;
   background:rgba(255,255,255,.7);
@@ -1531,22 +1525,21 @@ textarea.form-input{resize:vertical;min-height:40px}
     <div class="card ai-coach-card" id="ai-coach-card">
       <div class="card-title">
         <span class="emoji">🤖</span>AI 减脂教练
-        <span class="ai-style-badge" id="ai-style-badge" title="当前风格">🌸 温柔</span>
+        <span class="ai-style-badge-wrapper">
+          <span class="ai-style-badge" id="ai-style-badge" title="点击切换风格" onclick="toggleStyleDropdown(event)">🌸 温柔</span>
+          <div class="ai-style-dropdown" id="ai-style-dropdown" style="display:none">
+            <button class="style-option-drop" data-style="gentle" onclick="selectStyle('gentle')">🌸 温柔</button>
+            <button class="style-option-drop" data-style="cheer" onclick="selectStyle('cheer')">💪 鼓励</button>
+            <button class="style-option-drop" data-style="firm" onclick="selectStyle('firm')">😤 严厉</button>
+            <button class="style-option-drop" data-style="pro" onclick="selectStyle('pro')">📊 专业</button>
+          </div>
+        </span>
       </div>
       <div class="ai-coach-loading" id="ai-coach-loading" style="display:none">
         <span class="ai-dot"></span><span class="ai-dot"></span><span class="ai-dot"></span>
         <span style="color:var(--text-muted);font-size:13px;margin-left:8px">正在生成分析...</span>
       </div>
       <div id="ai-coach-content"></div>
-      <div class="ai-style-section">
-        <div class="style-selector compact" id="ai-style-selector">
-          <button class="style-option" data-style="gentle" onclick="selectStyle('gentle')">🌸 温柔</button>
-          <button class="style-option" data-style="cheer" onclick="selectStyle('cheer')">💪 鼓励</button>
-          <button class="style-option" data-style="firm" onclick="selectStyle('firm')">😤 严厉</button>
-          <button class="style-option" data-style="pro" onclick="selectStyle('pro')">📊 专业</button>
-        </div>
-        <button class="ai-save-style-btn" id="ai-save-style-btn" onclick="saveAnalysisStyleFromCard()">保存风格</button>
-      </div>
       <div class="ai-coach-actions">
         <button class="ai-refresh-btn" id="ai-refresh-btn" onclick="refreshAIAnalysis()" title="重新生成">🔄 刷新分析</button>
       </div>
@@ -1930,9 +1923,7 @@ function updateDateDisplay(){
   var el = document.getElementById('date-display');
   var d = parseDate(currentDate);
   var wd = ['日','一','二','三','四','五','六'];
-  var today = getTodayStr();
-  var label = currentDate===today ? '今天' : (currentDate===addDays(today,-1)?'昨天':'');
-  el.innerHTML = d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日 <span class="weekday">星期'+wd[d.getDay()]+(label?' · '+label:'')+'</span>';
+  el.innerHTML = d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日 <span class="weekday">星期'+wd[d.getDay()]+'</span>';
 }
 
 /* ====== UI: Date Picker ====== */
@@ -2650,60 +2641,76 @@ function renderAIContent(data){
 }
 
 window.refreshAIAnalysis = function(){
+  // 30秒冷却限制
+  var now = Date.now();
+  if(window._aiCooldownUntil && now < window._aiCooldownUntil){
+    var remain = Math.ceil((window._aiCooldownUntil - now)/1000);
+    showToast('请等待 '+remain+' 秒后再刷新');
+    return;
+  }
+  window._aiCooldownUntil = now + 30000;
+  var btn = document.getElementById('ai-refresh-btn');
+  var countdown = setInterval(function(){
+    var left = Math.ceil((window._aiCooldownUntil - Date.now())/1000);
+    if(left <= 0){ if(btn) btn.textContent = '🔄 刷新分析'; clearInterval(countdown); return; }
+    if(btn) btn.textContent = '⏳ '+left+'s';
+  },1000);
   aiAnalysisCache = null;
   renderAIAnalysis(currentDate);
 };
 
-window.selectStyle = function(style){
-  currentAnalysisStyle = style;
-  // 更新UI选中状态
-  var options = document.querySelectorAll('.style-option');
-  for(var i=0;i<options.length;i++){
-    options[i].classList.toggle('active',options[i].dataset.style===style);
-  }
-  // 更新保存按钮状态
-  var saveBtn = document.getElementById('ai-save-style-btn');
-  if(saveBtn){
-    saveBtn.textContent = '保存风格';
-    saveBtn.disabled = false;
+window.toggleStyleDropdown = function(e){
+  e.stopPropagation();
+  var dd = document.getElementById('ai-style-dropdown');
+  if(!dd) return;
+  var isOpen = dd.style.display === 'block';
+  if(isOpen){ dd.style.display = 'none'; }
+  else {
+    // 更新下拉选项中选中的样式
+    var items = dd.querySelectorAll('.style-option-drop');
+    for(var i=0;i<items.length;i++){
+      items[i].classList.toggle('active',items[i].dataset.style===currentAnalysisStyle);
+    }
+    dd.style.display = 'block';
+    // 点击其他区域关闭
+    setTimeout(function(){
+      document.addEventListener('click',closeStyleDropdown);
+    },10);
   }
 };
 
-async function saveAnalysisStyleFromCard(){
-  if(!currentUser){
-    showToast('请先登录');
-    return;
-  }
-  var client = initSupabase();
-  if(!client) return;
-  var saveBtn = document.getElementById('ai-save-style-btn');
-  if(saveBtn){
-    saveBtn.textContent = '保存中...';
-    saveBtn.disabled = true;
-  }
-  try{
-    await client.from('profiles').upsert({
-      user_id:currentUser.id,
-      analysis_style:currentAnalysisStyle,
-      updated_at:new Date().toISOString()
-    });
-    // 更新分析徽章
-    var badge = document.getElementById('ai-style-badge');
-    var styleNames = {gentle:'🌸 温柔',cheer:'💪 鼓励',firm:'😤 严厉',pro:'📊 专业'};
-    if(badge) badge.textContent = styleNames[currentAnalysisStyle]||'🌸 温柔';
-    // 清除缓存并刷新当前分析
-    aiAnalysisCache = null;
-    renderAIAnalysis(currentDate);
-    showToast('风格已保存');
-    if(saveBtn) saveBtn.textContent = '已保存';
-  }catch(e){
-    showToast('保存失败');
-    if(saveBtn){
-      saveBtn.textContent = '保存风格';
-      saveBtn.disabled = false;
+function closeStyleDropdown(){
+  var dd = document.getElementById('ai-style-dropdown');
+  if(dd) dd.style.display = 'none';
+  document.removeEventListener('click',closeStyleDropdown);
+}
+
+window.selectStyle = async function(style){
+  currentAnalysisStyle = style;
+  // 关闭下拉
+  var dd = document.getElementById('ai-style-dropdown');
+  if(dd) dd.style.display = 'none';
+  document.removeEventListener('click',closeStyleDropdown);
+  // 更新徽章
+  var badge = document.getElementById('ai-style-badge');
+  var styleNames = {gentle:'🌸 温柔',cheer:'💪 鼓励',firm:'😤 严厉',pro:'📊 专业'};
+  if(badge) badge.textContent = styleNames[style]||'🌸 温柔';
+  // 保存到数据库并刷新分析
+  if(currentUser){
+    var client = initSupabase();
+    if(client){
+      try{
+        await client.from('profiles').upsert({
+          user_id:currentUser.id,
+          analysis_style:style,
+          updated_at:new Date().toISOString()
+        });
+        aiAnalysisCache = null;
+        renderAIAnalysis(currentDate);
+      }catch(e){/* ignore */}
     }
   }
-}
+};
 
 // 在 loadProfileNickname 中也加载风格偏好
 var _origLoadProfileNickname = loadProfileNickname;
@@ -2717,21 +2724,10 @@ loadProfileNickname = async function(){
     var {data} = await client.from('profiles').select('analysis_style').eq('user_id',currentUser.id).limit(1);
     if(data&&data.length>0&&data[0].analysis_style){
       currentAnalysisStyle = data[0].analysis_style;
-      // 同步AI卡片风格按钮状态
-      var options = document.querySelectorAll('.style-option');
-      for(var i=0;i<options.length;i++){
-        options[i].classList.toggle('active',options[i].dataset.style===currentAnalysisStyle);
-      }
       // 同步徽章
       var badge = document.getElementById('ai-style-badge');
       var styleNames = {gentle:'🌸 温柔',cheer:'💪 鼓励',firm:'😤 严厉',pro:'📊 专业'};
       if(badge) badge.textContent = styleNames[currentAnalysisStyle]||'🌸 温柔';
-      // 同步保存按钮
-      var saveBtn = document.getElementById('ai-save-style-btn');
-      if(saveBtn){
-        saveBtn.textContent = '已保存';
-        saveBtn.disabled = true;
-      }
     }
   }catch(e){/* ignore */}
 };
@@ -2875,11 +2871,6 @@ window.openSettings = function(){
   if(currentUser){
     document.getElementById('profile-section').style.display = 'block';
     loadProfileNickname();
-    // 同步风格选择器
-    var options = document.querySelectorAll('.style-option');
-    for(var i=0;i<options.length;i++){
-      options[i].classList.toggle('active',options[i].dataset.style===currentAnalysisStyle);
-    }
   } else {
     document.getElementById('profile-section').style.display = 'none';
   }

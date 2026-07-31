@@ -1860,6 +1860,16 @@ function loadData(){
       if(!appData.settings) appData.settings = {};
       if(!appData.records) appData.records = {};
       if(!appData.customPhotos) appData.customPhotos = [];
+      // 增量同步元数据初始化：首次迁移时，把已有记录标记为"已同步"
+      if(!appData.syncMeta){
+        appData.syncMeta = {};
+        var now = Date.now();
+        var existDates = Object.keys(appData.records || {});
+        for(var i = 0; i < existDates.length; i++){
+          appData.syncMeta[existDates[i]] = {syncedAt:now, updatedAt:0};
+        }
+        appData.syncMeta['__settings__'] = {syncedAt:now, updatedAt:0};
+      }
     }
   }catch(e){console.error('Load data error:',e)}
 }
@@ -1869,6 +1879,12 @@ function saveData(){
   }catch(e){
     showToast('存储空间不足，请删除部分照片','error');
   }
+}
+// 标记某日期的记录为"已修改，待上传"
+function markDirty(dateKey){
+  if(!appData.syncMeta) appData.syncMeta = {};
+  var prev = appData.syncMeta[dateKey] || {syncedAt:0, updatedAt:0};
+  appData.syncMeta[dateKey] = {updatedAt:Date.now(), syncedAt:prev.syncedAt || 0};
 }
 function getRecord(dateStr){return appData.records[dateStr]||null}
 function getAllDates(){return Object.keys(appData.records).sort()}
@@ -2135,6 +2151,7 @@ window.saveCurrentRecord = function(){
     return;
   }
   appData.records[currentDate] = data;
+  markDirty(currentDate);
   saveData();
   updateQuickStats();
   showToast('记录已保存','success');
@@ -2151,6 +2168,7 @@ window.copyYesterdayRecord = function(){
   var copy = JSON.parse(JSON.stringify(prevRec));
   copy.ts = Date.now();
   appData.records[currentDate] = copy;
+  markDirty(currentDate);
   populateForm(copy);
   showToast('已复制，请修改后保存','info');
 };
@@ -2956,6 +2974,7 @@ window.saveSettings = function(){
   appData.settings.startWeight = parseFloat(document.getElementById('setting-start-weight').value)||null;
   appData.settings.targetWeight = parseFloat(document.getElementById('setting-target-weight').value)||null;
   appData.settings.height = parseInt(document.getElementById('setting-height').value)||null;
+  markDirty('__settings__');
   saveData();
   updateQuickStats();
   renderProgress();
@@ -2997,7 +3016,7 @@ window.importData = function(file){
 window.clearAllData = function(){
   if(!confirm('确定要清除所有数据吗？此操作不可恢复！建议先导出数据备份。')) return;
   if(!confirm('再次确认：清除后所有记录将永久丢失！')) return;
-  appData = {settings:{},records:{},customPhotos:[]};
+  appData = {settings:{},records:{},customPhotos:[],syncMeta:{}};
   localStorage.removeItem(STORE_KEY);
   loadFormFromRecord(currentDate);
   updateQuickStats();
@@ -3260,16 +3279,40 @@ window.cloudUpload = async function(){
   if(!client){ setSyncStatus('初始化失败，请刷新后重试',true); return; }
   if(!currentUser){ setSyncStatus('请先登录后再上传',true); return; }
   var uid = currentUser.id;
-  setSyncStatus('正在上传...');
+  if(!appData.syncMeta) appData.syncMeta = {};
+  // 计算需要上传的记录（增量）
+  var dates = getAllDates();
+  var now = Date.now();
+  var toUpload = [];
+  var skipped = 0;
+  for(var i = 0; i < dates.length; i++){
+    var d = dates[i];
+    var meta = appData.syncMeta[d] || {syncedAt:0, updatedAt:0};
+    if(!meta.syncedAt || (meta.updatedAt || 0) > meta.syncedAt){
+      toUpload.push(d);
+    } else {
+      skipped++;
+    }
+  }
+  // 检查 settings
+  var sMeta = appData.syncMeta['__settings__'] || {syncedAt:0, updatedAt:0};
+  var settingsDirty = !sMeta.syncedAt || (sMeta.updatedAt || 0) > sMeta.syncedAt;
+
+  if(toUpload.length === 0 && !settingsDirty){
+    setSyncStatus('已是最新，跳过 '+skipped+' 条已同步记录');
+    return;
+  }
+
+  var totalToUpload = toUpload.length + (settingsDirty ? 1 : 0);
+  setSyncStatus('正在上传 '+totalToUpload+' 条（跳过 '+skipped+' 条已同步）...');
   var btn = document.getElementById('cloud-upload-btn');
   if(btn){ btn.disabled = true; btn.textContent = '上传中...'; }
   try{
-    var dates = getAllDates();
     var success = 0, fail = 0;
     var firstError = null;
     var errors = [];
-    for(var i = 0; i < dates.length; i++){
-      var d = dates[i];
+    for(var i = 0; i < toUpload.length; i++){
+      var d = toUpload[i];
       var rec = appData.records[d];
       var payload = {user_id:uid, date:d, data:rec, updated_at:new Date().toISOString()};
       var {error} = await client.from('records').upsert(payload,{onConflict:'user_id,date'});
@@ -3278,27 +3321,36 @@ window.cloudUpload = async function(){
         if(!firstError) firstError = {date:d, msg:error.message||JSON.stringify(error)};
         if(errors.length < 3) errors.push(d+': '+error.message);
         console.error('Upload error for '+d+':',error);
+      } else {
+        success++;
+        var prevMeta = appData.syncMeta[d] || {updatedAt:0};
+        appData.syncMeta[d] = {updatedAt:prevMeta.updatedAt || 0, syncedAt:now};
       }
-      else { success++; }
     }
-    // Upload settings
-    var {error:serr} = await client.from('records').upsert({
-      user_id:uid,
-      date:'__settings__',
-      data:appData.settings,
-      updated_at:new Date().toISOString()
-    },{onConflict:'user_id,date'});
-    if(serr){
-      fail++;
-      if(!firstError) firstError = {date:'__settings__', msg:serr.message||JSON.stringify(serr)};
-    } else { success++; }
+    // 上传 settings
+    if(settingsDirty){
+      var {error:serr} = await client.from('records').upsert({
+        user_id:uid,
+        date:'__settings__',
+        data:appData.settings,
+        updated_at:new Date().toISOString()
+      },{onConflict:'user_id,date'});
+      if(serr){
+        fail++;
+        if(!firstError) firstError = {date:'__settings__', msg:serr.message||JSON.stringify(serr)};
+      } else {
+        success++;
+        appData.syncMeta['__settings__'] = {updatedAt:sMeta.updatedAt || 0, syncedAt:now};
+      }
+    }
+    // 持久化 syncMeta
+    saveData();
 
     if(fail > 0 && firstError){
       setSyncStatus('成功 '+success+'，失败 '+fail+'，原因: '+firstError.msg.substring(0,80), true);
-      // 打印详细错误到控制台方便调试
       console.error('Cloud upload errors:', errors);
     } else {
-      setSyncStatus('上传完成：成功 '+success+'，失败 '+fail);
+      setSyncStatus('上传完成：更新 '+success+' 条，跳过 '+skipped+' 条已同步');
     }
   }catch(e){
     setSyncStatus('上传失败：'+e.message, true);
@@ -3341,6 +3393,14 @@ window.cloudDownload = async function(){
     }
     appData.records = newRecords;
     appData.settings = newSettings;
+    // 下载后重置同步元数据：所有记录标记为已同步
+    appData.syncMeta = {};
+    var dlNow = Date.now();
+    var dlDates = Object.keys(newRecords);
+    for(var i = 0; i < dlDates.length; i++){
+      appData.syncMeta[dlDates[i]] = {syncedAt:dlNow, updatedAt:0};
+    }
+    appData.syncMeta['__settings__'] = {syncedAt:dlNow, updatedAt:0};
     saveData();
     loadFormFromRecord(currentDate);
     updateQuickStats();

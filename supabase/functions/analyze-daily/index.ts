@@ -1,7 +1,13 @@
 // Supabase Edge Function: analyze-daily
 // 调用 DeepSeek API 生成个性化减脂分析
+// 含服务端每日调用次数限制（每人3次）
+
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const DEEPSEEK_API_KEY = Deno.env.get("DEEPSEEK_API_KEY")!;
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const DAILY_LIMIT = 3;
 
 const STYLE_PROMPTS: Record<string, string> = {
   gentle: "用温暖、共情的语气，像闺蜜聊天一样，多使用'呢''哦''呀'等语气词，让人感到被理解和被关心。",
@@ -21,13 +27,63 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    // --- 认证与限流 ---
+    const authHeader = req.headers.get("Authorization") || "";
+    const token = authHeader.replace("Bearer ", "");
+
+    if (!token || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+      throw new Error("Missing credentials or config");
+    }
+
+    const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // 获取用户身份
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ success: false, error: "请先登录后再使用AI分析" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // 检查并更新每日调用次数
+    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const { data: usageRows } = await supabaseAdmin
+      .from("ai_usage")
+      .select("call_count")
+      .eq("user_id", user.id)
+      .eq("usage_date", today)
+      .limit(1);
+
+    const currentCount = usageRows && usageRows.length > 0 ? usageRows[0].call_count : 0;
+
+    if (currentCount >= DAILY_LIMIT) {
+      return new Response(
+        JSON.stringify({ success: false, error: `今日AI分析次数已用完（${DAILY_LIMIT}次/天），明天再来吧` }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // 更新用量（upsert）
+    const { error: upsertErr } = await supabaseAdmin
+      .from("ai_usage")
+      .upsert(
+        { user_id: user.id, usage_date: today, call_count: currentCount + 1, last_call_at: new Date().toISOString() },
+        { onConflict: "user_id,usage_date" }
+      );
+
+    if (upsertErr) {
+      // 用量记录失败不阻断分析，降级处理
+      console.error("Failed to update ai_usage:", upsertErr.message);
+    }
+
+    // --- 业务逻辑 ---
     const { dateStr, profile, records, weeklyAvg, style } = await req.json();
 
     if (!DEEPSEEK_API_KEY) {
       throw new Error("DEEPSEEK_API_KEY not configured");
     }
 
-    // 构建用户数据摘要
     const startW = profile.startWeight || "未知";
     const targetW = profile.targetWeight || "未知";
     const height = profile.height || "未知";
@@ -36,9 +92,8 @@ Deno.serve(async (req: Request) => {
     const lost = (startW !== "未知" && curW !== "未知")
       ? (parseFloat(startW as string) - parseFloat(curW as string)).toFixed(2) : "未知";
 
-    // 构建7天数据摘要（带输入截断，控制 token 消耗）
-    const MAX_NOTE_LEN = 60;  // 每条备注最多60字
-    const MAX_RECORDS = 7;    // 最多7天
+    const MAX_NOTE_LEN = 60;
+    const MAX_RECORDS = 7;
     let recordsSummary = "";
     for (const r of records.slice(-MAX_RECORDS)) {
       const data = r.data || {};
@@ -106,7 +161,6 @@ ${STYLE_PROMPTS[style] || STYLE_PROMPTS.gentle}
     }
 
     const content = result.choices?.[0]?.message?.content || "";
-    // 尝试从回复中提取 JSON
     const jsonMatch = content.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       throw new Error("Failed to parse AI response as JSON");
@@ -114,13 +168,17 @@ ${STYLE_PROMPTS[style] || STYLE_PROMPTS.gentle}
     const parsed = JSON.parse(jsonMatch[0]);
 
     return new Response(
-      JSON.stringify({ success: true, data: parsed }),
+      JSON.stringify({
+        success: true,
+        data: parsed,
+        remaining: Math.max(0, DAILY_LIMIT - currentCount - 1),
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err: any) {
     return new Response(
       JSON.stringify({ success: false, error: err.message }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });

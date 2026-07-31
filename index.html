@@ -2202,7 +2202,7 @@ function calcStreak(){
   for(var i=dates.length-1;i>=0;i--){
     var recDate = parseDate(dates[i]);
     var diff = Math.round((check-recDate)/86400000);
-    if(diff===0||diff===streak){
+    if(diff===0||diff===1){
       streak++;
       check = recDate;
     }else break;
@@ -2556,8 +2556,14 @@ window.renderAIAnalysis = async function(dateStr){
     }
   }catch(e){
     console.error('AI analysis failed:',e);
-    // 回退到规则引擎
-    renderAIContent(fallbackAnalysis(dateStr));
+    var msg = e.message || '';
+    // 判断是否为限流错误
+    if(msg.indexOf('次数已用完')!==-1 || msg.indexOf('明天再来')!==-1){
+      el.innerHTML = '<div style="color:var(--warning,orange);text-align:center;padding:24px">🔒 '+escHtml(msg)+'</div>';
+    } else {
+      // 回退到规则引擎
+      renderAIContent(fallbackAnalysis(dateStr));
+    }
   }finally{
     loadingEl.style.display = 'none';
     if(btn) btn.disabled = false;
@@ -2620,7 +2626,17 @@ async function callAIAnalysis(dateStr){
     })
   });
   var json = await resp.json();
-  if(!json.success) throw new Error(json.error||'Unknown error');
+  if(!json.success){
+    // 401 未登录
+    if(resp.status===401){
+      currentUser = null;
+      currentNickname = null;
+      showToast('登录已过期，请重新登录','error');
+      updateUserBadge();
+      renderAuthArea();
+    }
+    throw new Error(json.error||'Unknown error');
+  }
   return json.data;
 }
 
@@ -3047,10 +3063,14 @@ function initSupabase(){
           renderAuthArea();
         }
       } else if(event==='SIGNED_OUT'){
+        var wasSignedIn = !!currentUser;
         currentUser = null;
         currentNickname = null;
         updateUserBadge();
         renderAuthArea();
+        if(wasSignedIn){
+          showToast('登录已过期，请重新登录','error');
+        }
       }
     });
     return supabase;
@@ -3063,6 +3083,28 @@ function initSupabase(){
 /* ====== Auth ====== */
 var currentUser = null;
 var authMode = 'login'; // 'login' or 'signup'
+
+// 主动校验登录态，过期时提示重新登录
+async function ensureAuth(){
+  var client = initSupabase();
+  if(!client) return false;
+  try{
+    var {data:{session}} = await client.auth.getSession();
+    if(!session || !session.user){
+      currentUser = null;
+      currentNickname = null;
+      showToast('登录已过期，请重新登录','error');
+      updateUserBadge();
+      renderAuthArea();
+      return false;
+    }
+    currentUser = session.user;
+    return true;
+  }catch(e){
+    showToast('登录校验失败，请刷新后重试','error');
+    return false;
+  }
+}
 
 window.checkAuth = async function(){
   var client = initSupabase();
@@ -3275,9 +3317,9 @@ function setSyncStatus(msg,isError){
 }
 
 window.cloudUpload = async function(){
+  if(!await ensureAuth()) return;
   var client = initSupabase();
-  if(!client){ setSyncStatus('初始化失败，请刷新后重试',true); return; }
-  if(!currentUser){ setSyncStatus('请先登录后再上传',true); return; }
+  if(!client) return;
   var uid = currentUser.id;
   if(!appData.syncMeta) appData.syncMeta = {};
   // 计算需要上传的记录（增量）
@@ -3359,9 +3401,9 @@ window.cloudUpload = async function(){
 };
 
 window.cloudDownload = async function(){
+  if(!await ensureAuth()) return;
   var client = initSupabase();
-  if(!client){ setSyncStatus('初始化失败，请刷新后重试',true); return; }
-  if(!currentUser){ setSyncStatus('请先登录后再下载',true); return; }
+  if(!client) return;
   var uid = currentUser.id;
   if(!confirm('从云端下载将覆盖本地数据，确定继续？')) return;
   setSyncStatus('正在下载...');
@@ -3426,54 +3468,64 @@ function showToast(msg,type){
 
 /* ====== Groups ====== */
 window.loadMyGroups = async function(){
-  leaderboardCache = {}; // 清除排行榜缓存
-  if(!currentUser){
-    document.getElementById('group-list').innerHTML = '<div class="empty-state"><div class="empty-icon">🔒</div><div class="empty-text">请先登录后使用群组功能</div></div>';
-    document.getElementById('group-manage-section').style.display = 'none';
-    return;
-  }
+  leaderboardCache = {};
+  if(!await ensureAuth()){ document.getElementById('group-list').innerHTML = '<div class="empty-state"><div class="empty-icon">🔒</div><div class="empty-text">请先登录后使用群组功能</div></div>'; document.getElementById('group-manage-section').style.display = 'none'; return; }
   document.getElementById('group-manage-section').style.display = 'block';
   // 显示加载中
   document.getElementById('group-list').innerHTML = '<div class="empty-state"><div class="empty-text">加载中...</div></div>';
   var client = initSupabase();
   if(!client) return;
   try{
-    // 查询我的群组
+    // Step 1: 获取我的群组 ID
     var {data:memberships,error:err1} = await client.from('group_members').select('group_id').eq('user_id',currentUser.id);
     if(err1){ console.error('memberships query error:',err1); showGroupError('无法读取成员关系：'+err1.message); return; }
     var myGroupIds = (memberships||[]).map(function(m){return m.group_id;});
+    if(myGroupIds.length===0){
+      document.getElementById('group-list').innerHTML = '<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-text">还没有加入任何群组</div><div class="empty-hint">创建一个群组，或通过邀请链接加入朋友的群组</div></div>';
+      return;
+    }
 
-    // 查询所有群组的基本信息
-    var {data:allGroups,error:err2} = await client.from('groups').select('*').order('created_at',{ascending:false});
+    // Step 2: 批量查询群组信息（按 ID，适配新 RLS）
+    var {data:groups,error:err2} = await client.from('groups').select('*').in('id',myGroupIds).order('created_at',{ascending:false});
     if(err2){ console.error('groups query error:',err2); showGroupError('无法读取群组：'+err2.message); return; }
+    if(!groups||groups.length===0){ renderGroupList([]); return; }
 
-    var groups = (allGroups||[]).filter(function(g){
-      return myGroupIds.indexOf(g.id) !== -1;
-    });
+    // Step 3: 批量查询所有群组的成员 + 分享设置（并行）
+    var [memberRes, sharedRes] = await Promise.all([
+      client.from('group_members').select('group_id,user_id').in('group_id',myGroupIds),
+      client.from('shared_data').select('*').eq('user_id',currentUser.id).in('group_id',myGroupIds)
+    ]);
+    var allMembers = memberRes.data||[];
+    var allShared = sharedRes.data||[];
 
-    // 查询每个群组的成员数和分享设置
+    // 在 JS 中分组：memberMap[groupId] = [userId, ...], sharedMap[groupId] = {...}
+    var memberMap = {};
+    for(var i=0;i<allMembers.length;i++){
+      var m = allMembers[i];
+      if(!memberMap[m.group_id]) memberMap[m.group_id] = [];
+      memberMap[m.group_id].push(m.user_id);
+    }
+    var sharedMap = {};
+    for(var i=0;i<allShared.length;i++){
+      var s = allShared[i];
+      sharedMap[s.group_id] = s;
+    }
+
+    // Step 4: 组装 groupData
     var groupData = [];
     var allMemberIds = [];
     for(var i=0;i<groups.length;i++){
       var g = groups[i];
-      var {count:c,error:err3} = await client.from('group_members').select('*',{count:'exact',head:true}).eq('group_id',g.id);
-      var memberCount = (err3?0:(c||0));
-      // 查询当前用户在该群组的分享设置
-      var {data:sd} = await client.from('shared_data').select('*').eq('user_id',currentUser.id).eq('group_id',g.id).limit(1);
-      var share = (sd&&sd.length>0) ? sd[0] : {share_weight:false,share_achievements:false,share_checkin:false};
-
-      // 查询成员
-      var {data:members} = await client.from('group_members').select('user_id').eq('group_id',g.id);
-      var memberIds = (members||[]).map(function(m){return m.user_id;});
-      allMemberIds = allMemberIds.concat(memberIds);
-
+      var mIds = memberMap[g.id]||[];
+      var share = sharedMap[g.id]||{share_weight:false,share_achievements:false,share_checkin:false};
+      allMemberIds = allMemberIds.concat(mIds);
       groupData.push({
         id:g.id,
         name:g.name,
         owner_id:g.owner_id,
         invite_code:g.invite_code,
-        memberCount:memberCount,
-        memberIds:memberIds,
+        memberCount:mIds.length,
+        memberIds:mIds,
         share:share
       });
     }
@@ -3481,7 +3533,6 @@ window.loadMyGroups = async function(){
     var uniqueIds = allMemberIds.filter(function(v,i,a){return a.indexOf(v)===i;});
     var nicknames = await batchGetNicknames(uniqueIds);
     window._groupNicknames = nicknames;
-    // 附加昵称到 groupData 中
     for(var i=0;i<groupData.length;i++){
       groupData[i].nicknames = nicknames;
     }
@@ -3649,8 +3700,8 @@ window.joinByLink = async function(){
   var client = initSupabase();
   if(!client) return;
   try{
-    // 查找群组
-    var {data:groups,error:err1} = await client.from('groups').select('*').eq('invite_code',code).limit(1);
+    // 通过 SECURITY DEFINER 函数查找群组（非成员无法直接查 groups 表）
+    var {data:groups,error:err1} = await client.rpc('lookup_group_by_code',{code:code});
     if(err1||!groups||groups.length===0){
       if(errEl) errEl.textContent = '未找到该群组，请检查邀请码';
       return;

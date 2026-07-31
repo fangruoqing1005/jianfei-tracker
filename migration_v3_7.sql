@@ -20,15 +20,11 @@ GRANT EXECUTE ON FUNCTION lookup_group_by_code(TEXT) TO authenticated;
 DROP POLICY IF EXISTS groups_select ON groups;
 
 -- Step 4: 新策略：只有群组成员可以读取群组信息
--- 注意：创建者也必须是成员才能看到自己的群组（但创建时已自动加入）
+-- 复用 v3_5 创建的 is_group_member 函数，避免类型推断问题
 CREATE POLICY groups_select ON groups
   FOR SELECT
   TO authenticated
-  USING (
-    auth.uid() IN (
-      SELECT gm.user_id FROM group_members gm WHERE gm.group_id = id
-    )
-  );
+  USING (is_group_member(id));
 
 -- Step 5: 创建者可以管理自己的群组（更新名称等）
 DROP POLICY IF EXISTS groups_update ON groups;

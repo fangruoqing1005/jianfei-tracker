@@ -8,7 +8,7 @@ RETURNS TABLE(id UUID, name TEXT, owner_id UUID, invite_code TEXT)
 LANGUAGE sql SECURITY DEFINER SET search_path = ''
 AS $$
   SELECT g.id, g.name, g.owner_id, g.invite_code
-  FROM groups g
+  FROM public.groups g
   WHERE g.invite_code = code
   LIMIT 1;
 $$;

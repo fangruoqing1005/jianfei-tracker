@@ -2556,14 +2556,8 @@ window.renderAIAnalysis = async function(dateStr){
     }
   }catch(e){
     console.error('AI analysis failed:',e);
-    var msg = e.message || '';
-    // 判断是否为限流错误
-    if(msg.indexOf('次数已用完')!==-1 || msg.indexOf('明天再来')!==-1){
-      el.innerHTML = '<div style="color:var(--warning,orange);text-align:center;padding:24px">🔒 '+escHtml(msg)+'</div>';
-    } else {
-      // 回退到规则引擎
-      renderAIContent(fallbackAnalysis(dateStr));
-    }
+    // 静默降级：任何失败（含限流）都回退到规则引擎，用户无感知
+    renderAIContent(fallbackAnalysis(dateStr));
   }finally{
     loadingEl.style.display = 'none';
     if(btn) btn.disabled = false;

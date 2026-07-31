@@ -1,13 +1,13 @@
 // Supabase Edge Function: analyze-daily
 // 调用 DeepSeek API 生成个性化减脂分析
-// 含服务端每日调用次数限制（每人3次）
+// 含服务端每日调用次数限制（每人5次）
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const DEEPSEEK_API_KEY = Deno.env.get("DEEPSEEK_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const DAILY_LIMIT = 3;
+const DAILY_LIMIT = 5;
 
 const STYLE_PROMPTS: Record<string, string> = {
   gentle: "用温暖、共情的语气，像闺蜜聊天一样，多使用'呢''哦''呀'等语气词，让人感到被理解和被关心。",

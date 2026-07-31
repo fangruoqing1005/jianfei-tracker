@@ -3275,12 +3275,19 @@ window.cloudUpload = async function(){
   try{
     var dates = getAllDates();
     var success = 0, fail = 0;
+    var firstError = null;
+    var errors = [];
     for(var i = 0; i < dates.length; i++){
       var d = dates[i];
       var rec = appData.records[d];
       var payload = {user_id:uid, date:d, data:rec, updated_at:new Date().toISOString()};
       var {error} = await client.from('records').upsert(payload,{onConflict:'user_id,date'});
-      if(error){ fail++; console.error('Upload error for '+d+':',error); }
+      if(error){
+        fail++;
+        if(!firstError) firstError = {date:d, msg:error.message||JSON.stringify(error)};
+        if(errors.length < 3) errors.push(d+': '+error.message);
+        console.error('Upload error for '+d+':',error);
+      }
       else { success++; }
     }
     // Upload settings
@@ -3290,10 +3297,20 @@ window.cloudUpload = async function(){
       data:appData.settings,
       updated_at:new Date().toISOString()
     },{onConflict:'user_id,date'});
-    if(serr){ fail++; } else { success++; }
-    setSyncStatus('上传完成：成功 '+success+'，失败 '+fail);
+    if(serr){
+      fail++;
+      if(!firstError) firstError = {date:'__settings__', msg:serr.message||JSON.stringify(serr)};
+    } else { success++; }
+
+    if(fail > 0 && firstError){
+      setSyncStatus('成功 '+success+'，失败 '+fail+'，原因: '+firstError.msg.substring(0,80), true);
+      // 打印详细错误到控制台方便调试
+      console.error('Cloud upload errors:', errors);
+    } else {
+      setSyncStatus('上传完成：成功 '+success+'，失败 '+fail);
+    }
   }catch(e){
-    setSyncStatus('上传失败：'+e.message,true);
+    setSyncStatus('上传失败：'+e.message, true);
   }
   if(btn){ btn.disabled = false; btn.textContent = '⬆ 上传到云端'; }
 };
